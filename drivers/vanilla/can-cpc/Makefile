@@ -4,6 +4,7 @@ LDFLAGS += -L../can -L../cpc-usb
 libcan-cpc.so: can_cpc.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -shared -o libcan-cpc.so \
 	can_cpc.c -lcpc
+	ln -sf $(PWD)/libcan-cpc.so ../can/libcan.so
 
 install: libcan-cpc.so
 	install -c -o root -g root -m 644 libcan-cpc.so /usr/lib

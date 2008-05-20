@@ -4,6 +4,7 @@ LDFLAGS += -L../can -L../epos
 libcan-serial.so: can_serial.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -shared -o libcan-serial.so \
 	can_serial.c
+	ln -sf $(PWD)/libcan-serial.so ../can/libcan.so
 
 install: libcan-serial.so
 	install -c -o root -g root -m 644 libcan-serial.so /usr/lib

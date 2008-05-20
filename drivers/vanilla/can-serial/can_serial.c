@@ -43,13 +43,13 @@
 #include <termios.h>
 #include <fcntl.h>
 
+#undef ASL_DEBUG
+#undef DEBUG
+
 #include <pdebug.h>
 #include <epos.h>
 
 #include "can_serial.h"
-
-#undef ASL_DEBUG
-#undef DEBUG
 
 int fd = 0;
 static can_message_t message;
@@ -90,9 +90,9 @@ EPOS_ERROR_SERIAL error_serial[MAXERRORSERIAL] = {
 
 
 /* functions: **************************************************************/
-void can_init()
+void can_init(const char* dev)
 {
-	fd = open_device(MODEMDEVICE);
+	fd = open_device(dev);
 	clear_iobuffer(fd);
 	bzero(&message, sizeof(can_message_t));
 }
@@ -128,7 +128,7 @@ int epos2serial(int can_id, unsigned char *msg, unsigned char *data)
 
 	switch(msg[0])
 	{
-		case WRITE_1_BYTE:	data[0]=0x11;	/* opcode write 4 or less bytes */
+		case EPOS_WRITE_1_BYTE:	data[0]=0x11;	/* opcode write 4 or less bytes */
 							data[1]=0x02;	/* len-1 = 2 -> 3 data-words */
 							data[2]=msg[2];	/* high-byte index */
 							data[3]=msg[1]; /* low-byte index */
@@ -141,7 +141,7 @@ int epos2serial(int can_id, unsigned char *msg, unsigned char *data)
 							no_bytes_send = 10; /* 8 data-bytes + 2 CRC */
 							break;
 
-		case WRITE_2_BYTE:	data[0]=0x11;	/* opcode write 4 or less bytes */
+		case EPOS_WRITE_2_BYTE:	data[0]=0x11;	/* opcode write 4 or less bytes */
 							data[1]=0x02;	/* len-1 = 2 -> 3 data-words */
 							data[2]=msg[2];	/* high-byte index */
 							data[3]=msg[1]; /* low-byte index */
@@ -154,7 +154,7 @@ int epos2serial(int can_id, unsigned char *msg, unsigned char *data)
 							no_bytes_send = 10; /* 8 data-bytes + 2 CRC */
 							break;
 
-		case WRITE_4_BYTE:	data[0]=0x11;		/* opcode write 4 or less bytes */
+		case EPOS_WRITE_4_BYTE:	data[0]=0x11;		/* opcode write 4 or less bytes */
 							data[1]=0x03;		/* len-1 = 3 -> 4 data-words */
 							data[2]=msg[2];		/* high-byte index */
 							data[3]=msg[1]; 	/* low-byte index */
@@ -172,7 +172,7 @@ int epos2serial(int can_id, unsigned char *msg, unsigned char *data)
 							no_bytes_send = 12; /* 10 data-bytes + 2 CRC */
 							break;
 
-		case READ:			data[0]=0x10;		/* opcode read 4 or less bytes */
+		case EPOS_READ:			data[0]=0x10;		/* opcode read 4 or less bytes */
 							data[1]=0x01;		/* len-1 = 1 -> 2 data-words */
 							data[2]=msg[2];		/* high-byte index */
 							data[3]=msg[1]; 	/* low-byte index */
@@ -516,7 +516,7 @@ int receive_dataframe(int fd, unsigned char *data)
 	return no_bytes_recv;
 }
 /*-----------------------------------*/
-int open_device(char *name)
+int open_device(const char *name)
 {
 	struct termios oldtio, newtio;
 

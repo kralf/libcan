@@ -10,11 +10,11 @@
 #include <signal.h>
 #include <termios.h>
 
+#undef ASL_DEBUG
+
 #include <pdebug.h>
 
 #include "can_cpc.h"
-
-#undef ASL_DEBUG
 
 /* Different macros for watching on read, write or both on a CAN channel. */
 /* Also stdin is watched for a user input.                                */
@@ -46,7 +46,7 @@ struct timeval tv;
 void cpc_read_message_handler(int handle, const CPC_MSG_T *cpcmsg);
 
 /* Init CAN Hardware */
-void can_init() {
+void can_init(const char* dev) {
   bzero(&message, sizeof(can_message_t));
 
   /* ... add your code here ... */
@@ -54,7 +54,7 @@ void can_init() {
   btr1=0x14;
 
   /* Using Interface cpc_usb0 */
-  strcpy(interface, "/dev/usb/cpc_usb0");
+  strcpy(interface, dev);
   // strcpy(interface, "/dev/cpc_usb0");
 
   /*Open the CAN*/
@@ -99,7 +99,7 @@ void can_init() {
 
   /* switch on transmission of CAN messages from CPC to PC */
   CPC_Control(handle, CONTR_CAN_Message | CONTR_CONT_ON);
-  PDEBUG("InitHW finished...\n");
+  PDEBUG("Initialization finished...\n");
 }
 
 void can_close() {
@@ -108,7 +108,7 @@ void can_close() {
 
 void can_send_message(can_message_t* message) {
   static CPC_CAN_MSG_T cmsg = {0x00L, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
-  int i;
+  int i, retval = 0;
 
   cmsg.id=message->id;                          //put the can id of the device in cmsg
   cmsg.length=8;                                //put the lenght of the message in cmsg
@@ -118,7 +118,15 @@ void can_send_message(can_message_t* message) {
 
   SELECT_WR                                     //enable write en read
   if (FD_ISSET(cpcfd, &writefds)) {             //if chanel open and writable (???)
-    CPC_SendMsg(handle, 0, &cmsg);              //send the message of lenght 8 to the device of id can_id
+    //send the message of lenght 8 to the device of id can_id
+    while ((retval = CPC_SendMsg(handle, 0, &cmsg)) == CPC_ERR_CAN_NO_TRANSMIT_BUF)
+      usleep(10);
+
+    if (retval == 0)
+      //wait for the reply
+      can_read_message();
+    else
+      PDEBUG_ERR("%s\n", CPC_DecodeErrorMsg(retval));
   }
 }
 

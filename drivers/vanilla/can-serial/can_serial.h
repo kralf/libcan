@@ -33,9 +33,6 @@
 /** Default baudrate using EPOS.
 */
 #define BAUDRATE B57600
-/** Current serial device for communication.
-*/
-#define MODEMDEVICE "/dev/ttyS0"
 /** Default timeout [seconds] during reading form serial device (used by select()).
 */
 #define TIMEOUTSEC 0
@@ -89,7 +86,7 @@ void serial2epos(/** Array of char representing the dataframe sent to EPOS */ un
 * 	\return
 *	File descriptor
 */
-int open_device(/** Name of the device (/dev/ttyS0 for first serial port) */ char *name);
+int open_device(/** Name of the device (/dev/ttyS0 for first serial port) */ const char *name);
 
 /** Close an open device.
 **

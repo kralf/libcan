@@ -22,8 +22,10 @@ typedef struct {
 } can_message_t;
 
 /** \brief Initialize CAN communication by opening devices
+  * \param[in] dev The character device to be used for CAN communication.
   */
-void can_init(void);
+void can_init(
+  const char* dev);
 
 /** \brief Close CAN communication by closing devices
   */
