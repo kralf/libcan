@@ -1,13 +1,15 @@
 CFLAGS += -I../can -I../epos
 LDFLAGS += -L../can -L../epos
 
+PREFIX = /usr/local
+
 libcan-serial.so: can_serial.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -shared -o libcan-serial.so \
 	can_serial.c
 	ln -sf $(PWD)/libcan-serial.so ../can/libcan.so
 
 install: libcan-serial.so
-	install -c -o root -g root -m 644 libcan-serial.so /usr/lib
+	install -c -m 644 libcan-serial.so $(PREFIX)/lib/libcan.so
 
 clean:
 	rm -f *.o
