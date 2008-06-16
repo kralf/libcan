@@ -225,9 +225,9 @@ void serial2epos(unsigned char *data_send, unsigned char *data_recv)
 			{
 				printf("Serial ErrorCode 0x%08lX: %s\n", error_serial[i].code,
                                   error_serial[i].msg);
-				epos_read.number[(message.id - 0x581)].error.comm.code =
+				epos_read.node[(message.id - 0x581)].error.comm.code =
                                   error_serial[i].code;
-				epos_read.number[(message.id - 0x581)].error.comm.msg =
+				epos_read.node[(message.id - 0x581)].error.comm.msg =
                                   error_serial[i].msg;
 			}
 		}
