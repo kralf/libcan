@@ -1,4 +1,4 @@
-CFLAGS += -I../can -I../cpc-usb
+CFLAGS += -I../can -I../cpc-usb -fPIC
 LDFLAGS += -L../can -L../cpc-usb
 
 PREFIX = /usr/local

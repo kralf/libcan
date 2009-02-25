@@ -122,9 +122,12 @@ void can_send_message(can_message_t* message) {
     while ((retval = CPC_SendMsg(handle, 0, &cmsg)) == CPC_ERR_CAN_NO_TRANSMIT_BUF)
       usleep(10);
 
-    if (retval == 0)
+    if (retval == 0) {
       //wait for the reply
+      PDEBUG("Sent CAN message, now waiting for reply...\n");
       can_read_message();
+      PDEBUG("Received CAN reply\n");
+    }
     else
       PDEBUG_ERR("%s\n", CPC_DecodeErrorMsg(retval));
   }
@@ -132,7 +135,7 @@ void can_send_message(can_message_t* message) {
 
 void can_read_message() {
   /* task for reading can */
-  SELECT                                        //enabel read (???)
+  SELECT                                        //enable read (???)
 
   if (nfds > 0) {
   if (FD_ISSET(cpcfd, &readfds)) {              //check, if messages have been received
