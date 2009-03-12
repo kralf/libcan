@@ -1,4 +1,4 @@
-CFLAGS += -I../can -I../epos
+CFLAGS += -I../can -I../epos -fPIC
 LDFLAGS += -L../can -L../epos
 
 PREFIX = /usr/local
