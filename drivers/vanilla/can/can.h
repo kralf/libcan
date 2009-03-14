@@ -35,10 +35,11 @@ typedef struct {
 } can_message_t;
 
 /** \brief Initialize CAN communication by opening devices
-  * \param[in] dev The character device to be used for CAN communication.
+  * \param[in] dev_name The name of the character device to be used for CAN
+  *   communication.
   */
 void can_init(
-  const char* dev);
+  const char* dev_name);
 
 /** \brief Close CAN communication by closing devices
   */
@@ -47,7 +48,8 @@ void can_close(void);
 /** \brief Send a CAN message
   * \param[in] message The CAN message to be sent.
   */
-void can_send_message(can_message_t* message);
+void can_send_message(
+  can_message_t* message);
 
 /** \brief Asynchronously read a CAN message
   * This function instantly returns to the caller.
@@ -57,6 +59,7 @@ void can_read_message(void);
 /** \brief Asynchronous CAN read message handler
   * \param[in] message The received CAN message.
   */
-void can_read_message_handler(const can_message_t* message);
+void can_read_message_handler(
+  const can_message_t* message);
 
 #endif

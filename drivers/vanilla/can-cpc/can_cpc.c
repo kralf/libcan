@@ -66,14 +66,14 @@ struct timeval tv;
 
 void cpc_read_message_handler(int handle, const CPC_MSG_T *cpcmsg);
 
-void can_init(const char* dev) {
+void can_init(const char* dev_name) {
   bzero(&message, sizeof(can_message_t));
 
   btr0=0x00;
   btr1=0x14;
 
   /* Using Interface cpc_usb0 */
-  strcpy(interface, dev);
+  strcpy(interface, dev_name);
 
   /*Open the CAN*/
   if ((handle = CPC_OpenChannel(interface)) < 0) {
