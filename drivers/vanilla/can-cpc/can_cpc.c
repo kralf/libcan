@@ -1,3 +1,23 @@
+/***************************************************************************
+ *   Copyright (C) 2008 by Ralf Kaestner                                   *
+ *   ralf.kaestner@gmail.com                                               *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+
 #include <sys/types.h>
 #include <sys/dir.h>
 #include <stdio.h>
@@ -9,22 +29,23 @@
 #include <unistd.h>
 #include <signal.h>
 #include <termios.h>
+#include <pdebug.h>
 
 #undef ASL_DEBUG
 
-#include <pdebug.h>
-
 #include "can_cpc.h"
 
-/* Different macros for watching on read, write or both on a CAN channel. */
-/* Also stdin is watched for a user input.                                */
+/**
+ * Different macros for watching on read, write or both on a CAN channel.
+ * Also stdin is watched for a user input.
+ */
 
-#define SELECT    FD_ZERO(&readfds); \
-                  FD_SET(0, &readfds); \
-                  FD_SET(cpcfd, &readfds); \
-                  tv.tv_sec = 0; \
-                  tv.tv_usec = 500000; \
-                  nfds = select(cpcfd+1, &readfds, NULL, NULL, &tv);
+#define SELECT FD_ZERO(&readfds); \
+               FD_SET(0, &readfds); \
+               FD_SET(cpcfd, &readfds); \
+               tv.tv_sec = 0; \
+               tv.tv_usec = 500000; \
+               nfds = select(cpcfd+1, &readfds, NULL, NULL, &tv);
 
 #define SELECT_WR FD_ZERO(&writefds); \
                   FD_SET(0, &readfds); \
@@ -45,50 +66,42 @@ struct timeval tv;
 
 void cpc_read_message_handler(int handle, const CPC_MSG_T *cpcmsg);
 
-/* Init CAN Hardware */
 void can_init(const char* dev) {
   bzero(&message, sizeof(can_message_t));
 
-  /* ... add your code here ... */
   btr0=0x00;
   btr1=0x14;
 
   /* Using Interface cpc_usb0 */
   strcpy(interface, dev);
-  // strcpy(interface, "/dev/cpc_usb0");
 
   /*Open the CAN*/
   if ((handle = CPC_OpenChannel(interface)) < 0) {
-      fprintf(stderr, "ERROR: %s\n", CPC_DecodeErrorMsg(handle));
-      exit(1);
+    fprintf(stderr, "ERROR: %s\n", CPC_DecodeErrorMsg(handle));
+    exit(1);
   }
   PDEBUG("%s is CAN interface -> handle %d\n", interface, handle);
 
-  /* ############################# Init Parameters ######################*/
-
   /*Define Handlers*/
   CPC_AddHandler(handle, cpc_read_message_handler);
-  /*CPC_AddHandler(handle, get_steering_msg_handler);
-  CPC_AddHandler(handle, get_yaw_msg_handler);*/
-
 
   /* This sets up the parameters used to initialize the CAN controller */
   PDEBUG("Initializing CAN-Controller ... ");
 
   CPCInitParamsPtr = CPC_GetInitParamsPtr(handle);
-  CPCInitParamsPtr->canparams.cc_type                      = SJA1000;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.btr0       = btr0;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.btr1       = btr1;
+  CPCInitParamsPtr->canparams.cc_type = SJA1000;
+  CPCInitParamsPtr->canparams.cc_params.sja1000.btr0 = btr0;
+  CPCInitParamsPtr->canparams.cc_params.sja1000.btr1 = btr1;
   CPCInitParamsPtr->canparams.cc_params.sja1000.outp_contr = 0xda;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code0  = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code1  = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code2  = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code3  = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask0  = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask1  = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask2  = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask3  = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.mode       = 0;
+  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code0 = 0xff;
+  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code1 = 0xff;
+  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code2 = 0xff;
+  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code3 = 0xff;
+  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask0 = 0xff;
+  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask1 = 0xff;
+  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask2 = 0xff;
+  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask3 = 0xff;
+  CPCInitParamsPtr->canparams.cc_params.sja1000.mode = 0;
 
   CPC_CANInit(handle, 0);
   PDEBUG("Done!\n\n");
@@ -110,16 +123,16 @@ void can_send_message(can_message_t* message) {
   static CPC_CAN_MSG_T cmsg = {0x00L, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
   int i, retval = 0;
 
-  cmsg.id=message->id;                          //put the can id of the device in cmsg
-  cmsg.length=8;                                //put the lenght of the message in cmsg
-  for(i = 0; i < cmsg.length; i++) {
-    cmsg.msg[i] = message->content[i];          //put the message in cmsg
-  }
+  cmsg.id=message->id;                  //put the can id of the device in cmsg
+  cmsg.length=8;                        //put the lenght of the message in cmsg
+  for(i = 0; i < cmsg.length; i++)
+    cmsg.msg[i] = message->content[i];  //put the message in cmsg
 
-  SELECT_WR                                     //enable write en read
-  if (FD_ISSET(cpcfd, &writefds)) {             //if chanel open and writable (???)
+  SELECT_WR                             //enable write en read
+  if (FD_ISSET(cpcfd, &writefds)) {     //if chanel open and writable (???)
     //send the message of lenght 8 to the device of id can_id
-    while ((retval = CPC_SendMsg(handle, 0, &cmsg)) == CPC_ERR_CAN_NO_TRANSMIT_BUF)
+    while ((retval = CPC_SendMsg(handle, 0, &cmsg)) ==
+      CPC_ERR_CAN_NO_TRANSMIT_BUF)
       usleep(10);
 
     if (retval == 0) {
@@ -135,26 +148,24 @@ void can_send_message(can_message_t* message) {
 
 void can_read_message() {
   /* task for reading can */
-  SELECT                                        //enable read (???)
+  SELECT                               //enable read (???)
 
   if (nfds > 0) {
-  if (FD_ISSET(cpcfd, &readfds)) {              //check, if messages have been received
-      do{;}                                     //wait
-      while(CPC_Handle(handle));                //until OK is send
+    if (FD_ISSET(cpcfd, &readfds)) {   //check, if messages have been received
+      do {;}                           //wait
+      while(CPC_Handle(handle));       //until OK is send
     }
   }
-  else if(nfds == -1)                           //if error
-    perror(interface);                          //print error
+  else if(nfds == -1)                  //if error
+    perror(interface);                 //print error
 }
 
-void cpc_read_message_handler(int handle, const CPC_MSG_T *cpcmsg)
-{
+void cpc_read_message_handler(int handle, const CPC_MSG_T *cpcmsg) {
   int i;
 
   message.id = cpcmsg->msg.canmsg.id;
-  for(i = 0; i < cpcmsg->msg.canmsg.length; i++) {
+  for(i = 0; i < cpcmsg->msg.canmsg.length; i++)
     message.content[i] = cpcmsg->msg.canmsg.msg[i];
-  }
 
   can_read_message_handler(&message);
 }
