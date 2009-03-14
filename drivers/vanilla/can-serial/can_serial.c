@@ -96,38 +96,32 @@ void can_init(const char* dev)
 	clear_iobuffer(fd);
 	bzero(&message, sizeof(can_message_t));
 }
-/*-----------------------------------*/
-void can_close()
-{
+
+void can_close() {
 	close_device(fd);
 }
-/*-----------------------------------*/
-void can_send_message(can_message_t* message)
-{
+
+void can_send_message(can_message_t* message) {
 	unsigned char data_send[64];
 	unsigned char data_recv[64];
 	int len;
 
 	len = epos2serial(message->id, message->content, data_send);
 
-		send_dataframe(fd, data_send, len);
-
-		len = receive_dataframe(fd, data_recv);
+  send_dataframe(fd, data_send, len);
+  len = receive_dataframe(fd, data_recv);
 
 	serial2epos(data_send, data_recv);
 }
-/*-----------------------------------*/
-void can_read_message()
-{
+
+void can_read_message() {
 	// Empty!!!
 }
-/*-----------------------------------*/
-int epos2serial(int can_id, unsigned char *msg, unsigned char *data)
-{
+
+int epos2serial(int can_id, unsigned char *msg, unsigned char *data) {
 	int no_bytes_send=0;
 
-	switch(msg[0])
-	{
+	switch(msg[0]) {
 		case EPOS_WRITE_1_BYTE:	data[0]=0x11;	/* opcode write 4 or less bytes */
 							data[1]=0x02;	/* len-1 = 2 -> 3 data-words */
 							data[2]=msg[2];	/* high-byte index */
@@ -189,17 +183,15 @@ int epos2serial(int can_id, unsigned char *msg, unsigned char *data)
 	}
 	return no_bytes_send;
 }
-/*-----------------------------------*/
-void serial2epos(unsigned char *data_send, unsigned char *data_recv)
-{
+
+void serial2epos(unsigned char *data_send, unsigned char *data_recv) {
 	long int error_no = 0;
 	int i;
 
 	message.id = (data_send[5] & 0x000000FF) + 0x580;
 
 	if(data_recv[2] == 0x00 && data_recv[3] == 0x00 && data_recv[4] == 0x00 &&
-        data_recv[5] == 0x00)
-	{
+    data_recv[5] == 0x00) {
 		message.content[0] = 0x00;			/* no error */
 
 		message.content[1] = data_send[2];	/* high-byte index */
@@ -212,8 +204,7 @@ void serial2epos(unsigned char *data_send, unsigned char *data_recv)
 		message.content[5] = data_recv[8];	/* high-byte of low-word data */
 		message.content[4] = data_recv[9];	/* low-byte of low-word data */
 	}
-	else // Serial error occured see EPOS Communication Guide page 18
-	{
+	else { // Serial error occured see EPOS Communication Guide page 18
                 //message.content[0] = 0x80;	        /* Configuration error */
 
 		error_no = (long int)
@@ -236,9 +227,8 @@ void serial2epos(unsigned char *data_send, unsigned char *data_recv)
 
 	can_read_message_handler(&message);
 }
-/*-----------------------------------*/
-int send_dataframe(int fd, unsigned char *data, int no_bytes_send)
-{
+
+int send_dataframe(int fd, unsigned char *data, int no_bytes_send) {
 	int i;
 	unsigned char buffer;
 	unsigned char crc_value[2];
@@ -270,14 +260,12 @@ int send_dataframe(int fd, unsigned char *data, int no_bytes_send)
 
 /* 3. Send Op-code and wait for readyAck */
 
-	for(i=0;i<MAXRETRY;i++)
-	{
+	for(i=0;i<MAXRETRY;i++) {
 		PDEBUG_SNIP("Send opcode 0x%02X...",data[0]);
 
 		ret = write_byte(fd, data[0]);
 
-		if(ret != 1)
-		{
+		if(ret != 1) {
 			return -1;
 		}
 		PDEBUG_SNIP("Done.\n");
@@ -286,25 +274,21 @@ int send_dataframe(int fd, unsigned char *data, int no_bytes_send)
 
 		ret = read_byte(fd,&buffer);
 
-		if((ret == 1) && (buffer == OKAY))
-		{
+		if((ret == 1) && (buffer == OKAY)) {
 		  	PDEBUG_SNIP("Done. Received 'OKAY'.\n");
 			break;
 		}
-		if(ret == 1 && buffer == FAILED)
-		{
+		if(ret == 1 && buffer == FAILED) {
 			PDEBUG_SNIP("Done. Received 'FAILED'.\nEPOS seems not to be ready!!!\n");
 			//			continue;
 		}
-		if(ret == 0 )
-		{
+		if(ret == 0 ) {
 			PDEBUG_SNIP("ERROR: EPOS doesn't answer!!!\n");
 			//			continue;
 		}
 		PDEBUG_SNIP("ERROR: Unkown value. Will try again!!!\n");
 	}
-	if(i == MAXRETRY)
-	{
+	if(i == MAXRETRY) {
 		PDEBUG_SNIP("Failure at sending op-code!!!\n");
 		return -1;
 	}
@@ -321,46 +305,39 @@ int send_dataframe(int fd, unsigned char *data, int no_bytes_send)
 	*/
 
 	PDEBUG_SNIP("Send rest of data-frame...");
-	if(write_string(fd, data+1, no_bytes_send-1) != no_bytes_send-1)
-	{
+	if(write_string(fd, data+1, no_bytes_send-1) != no_bytes_send-1) {
 		return -1;
 	}
 	PDEBUG_SNIP("Done.\n");
 
-	for(i=0;i<MAXRETRY;i++)
-	{
+	for(i=0;i<MAXRETRY;i++) {
 		PDEBUG_SNIP("Wait for endAck...");
 		ret = read_byte(fd,&buffer);
 
-		if(ret == 1 && buffer == OKAY)
-		{
+		if(ret == 1 && buffer == OKAY) {
 		  	PDEBUG_SNIP("Done. Received 'OKAY'.\n");
 			break;
 		}
-		if(ret == 1 && buffer == FAILED)
-		{
+		if(ret == 1 && buffer == FAILED) {
 			PDEBUG_SNIP("Done. Received 'FAILED'.\nEPOS hasn't accepted data!!!\n");
 			return -1;
 		}
-		if(ret == 0)
-		{
+		if(ret == 0) {
 			PDEBUG_SNIP("ERROR: EPOS doesn't answer!!!\n");
 			continue;
 		}
 		PDEBUG_SNIP("ERROR: Unkown value. Will try again!!!\n");
 	}
 
-	if(i == MAXRETRY)
-	{
+	if(i == MAXRETRY) {
 		PDEBUG_SNIP("Failure at sending rest of data!!!\n");
 		return -1;
 	}
 
 	return no_bytes_send;
 }
-/*-----------------------------------*/
-int receive_dataframe(int fd, unsigned char *data)
-{
+
+int receive_dataframe(int fd, unsigned char *data) {
 	int i,n,ret;
 	unsigned char buffer, crc_value[2];
 	int no_bytes_recv=0,no_bytes_expect=0;
@@ -369,27 +346,23 @@ int receive_dataframe(int fd, unsigned char *data)
 
 /* 1. Wait for response-opcode */
 
-	for(i=0;i<MAXRETRY;i++)
-	{
+	for(i=0;i<MAXRETRY;i++) {
 		PDEBUG_SNIP("Wait for response-opcode...");
 
 		ret = read_byte(fd,&buffer);
 
-		if(ret == 1 && buffer == RESPONSE)
-		{
+		if(ret == 1 && buffer == RESPONSE) {
 		  	PDEBUG_SNIP("Done.\n");
 			data[0] = RESPONSE;
 			break;
 		}
-		if(ret == 0)
-		{
+		if(ret == 0) {
 			PDEBUG_SNIP("ERROR: EPOS doesn't answer!!!\n");
 			continue;
 		}
 		PDEBUG_SNIP("ERROR: Unkown value: 0x%02X. Will try again!!!\n",buffer);
 	}
-	if(i == MAXRETRY)
-	{
+	if(i == MAXRETRY) {
 		PDEBUG_SNIP("Failure at receiving response op-code!!!\n");
 		return -1;
 	}
@@ -401,34 +374,29 @@ int receive_dataframe(int fd, unsigned char *data)
 
 	ret = write_byte(fd, OKAY);
 
-	if(ret != 1)
-	{
+	if(ret != 1) {
 		return -1;
 	}
 
 	PDEBUG_SNIP("Done.\n");
 
-	for(i=0;i<MAXRETRY;i++)
-	{
+	for(i=0;i<MAXRETRY;i++) {
 		PDEBUG_SNIP("Wait for dataframe length...");
 
 		ret = read_byte(fd,&buffer);
 
-		if(ret == 1)
-		{
+		if(ret == 1) {
 		  	PDEBUG_SNIP("Done.\n");
 			data[1] = buffer;
 			break;
 		}
-		if(ret == 0 )
-		{
+		if(ret == 0 ) {
 			PDEBUG_SNIP("ERROR: EPOS doesn't answer!!!\n");
 			continue;
 		}
 		PDEBUG_SNIP("ERROR: Unkown value. Will try again!!!\n");
 	}
-	if(i == MAXRETRY)
-	{
+	if(i == MAXRETRY) {
 		PDEBUG_SNIP("Failure at receiving response op-code!!!\n");
 		return -1;
 	}
@@ -440,14 +408,12 @@ int receive_dataframe(int fd, unsigned char *data)
 
 	PDEBUG_SNIP("Wait for expected %d bytes...",no_bytes_expect);
 
-	for(n=0;n<no_bytes_expect;n++)
-	{
+	for(n=0;n<no_bytes_expect;n++) {
 		ret = read_byte(fd,&buffer);
 		data[n+2] = buffer;
 	}
 
-	if(n != no_bytes_expect)
-	{
+	if(n != no_bytes_expect) {
 		PDEBUG_SNIP("ERROR: %d bytes received, %d bytes expected!!!",n,no_bytes_expect);
 		return -1;
 	}
@@ -477,28 +443,24 @@ int receive_dataframe(int fd, unsigned char *data)
 
 	//prtmsg("calc_crc",crc_value,2);
 
-	if(crc_value[0] == 0x00 && crc_value[1] == 0x00)
-	{
+	if(crc_value[0] == 0x00 && crc_value[1] == 0x00) {
 		PDEBUG_SNIP("Done.\n");
 		PDEBUG_SNIP("Send endAck 'OKAY'...");
 
 		ret = write_byte(fd, OKAY);
 
-		if(ret!=1)
-		{
+		if(ret!=1) {
 			return -1;
 		}
 		PDEBUG_SNIP("Done.\n");
 	}
-	else
-	{
+	else {
 		PDEBUG_SNIP("Failure: crc is wrong!!!\n");
 		PDEBUG_SNIP("Send endAck 'FAILED'...");
 
 		ret = write_byte(fd, FAILED);
 
-		if( ret!=1)
-		{
+		if( ret!=1) {
 			return -1;
 		}
 		PDEBUG_SNIP("Done.\n");
@@ -515,14 +477,12 @@ int receive_dataframe(int fd, unsigned char *data)
 /* Finished */
 	return no_bytes_recv;
 }
-/*-----------------------------------*/
-int open_device(const char *name)
-{
+
+int open_device(const char *name) {
 	struct termios oldtio, newtio;
 
 	fd=open(name, O_RDWR | O_NOCTTY);//Serial Programming HOWTO
-	if(fd == -1)
-	{
+	if(fd == -1) {
 		perror("Error: Can't open device");
 		exit(-1);
 	}
@@ -545,21 +505,17 @@ int open_device(const char *name)
 	#endif
 	return fd;
 }
-/*-----------------------------------*/
-int close_device(int fd)
-{
+
+int close_device(int fd) {
 	#ifdef DEBUG_DEV
 	PDEBUG_SNIP("Try to close device... ");
 	#endif
-	if(fd > -1)
-	{
-		if(close(fd) == -1)
-		{
+	if(fd > -1) {
+		if(close(fd) == -1) {
 			perror("ERROR: Failure at close()");
 			return -1;
 		}
-		else
-		{
+		else {
 			#ifdef DEBUG_DEV
 			PDEBUG_SNIP("Done\n");
 			#endif
@@ -569,9 +525,8 @@ int close_device(int fd)
 	PDEBUG_SNIP("ERROR: No device to close!\n");
 	return -1;
 }
-/*-----------------------------------*/
-int read_byte(int fd, unsigned char *buffer)
-{
+
+int read_byte(int fd, unsigned char *buffer) {
 	int ret,n;
 	struct timeval tvlr;
 	fd_set fdset;
@@ -583,26 +538,22 @@ int read_byte(int fd, unsigned char *buffer)
 
 	ret = select(fd + 1, &fdset, NULL, NULL, &tvlr);
 
-	if(ret > 0)
-	{
+	if(ret > 0) {
 		n = read(fd, buffer, 1);
 		#ifdef DEBUG
 			PDEBUG_SNIP("read %d byte(s): 0x%02X\n", n, buffer[0]);
 		#endif
 		return n;
 	}
-	if(ret == 0)
-	{
+	if(ret == 0) {
 		printf("ERROR: time-out at reading one Byte\n");
-
 		return 0;
 	}
 	perror("Failure at read_byte");
 	return -1;
 }
-/*-----------------------------------*/
-int write_byte(int fd, unsigned char data)
-{
+
+int write_byte(int fd, unsigned char data) {
 	int ret;
 	#ifdef SERIAL_DUMMY
 		PDEBUG_SNIP("==> serial Out:|0x%02X|\n",data);
@@ -617,9 +568,8 @@ int write_byte(int fd, unsigned char data)
 	return 0;
 	#endif
 }
-/*-----------------------------------*/
-int write_string(int fd, unsigned char *data, int len)
-{
+
+int write_string(int fd, unsigned char *data, int len) {
 	int length;
 	#ifdef SERIAL_DUMMY
 		PDEBUG_SNIP("==> serial Out:|0x%s|\n",data);
@@ -636,9 +586,8 @@ int write_string(int fd, unsigned char *data, int len)
 	return len;
 	#endif
 }
-/*-----------------------------------*/
-int c2w(unsigned char *data, word *buffer, int no_chars)
-{
+
+int c2w(unsigned char *data, word *buffer, int no_chars) {
 	int n,i=0;
 
 	for(n=0;n<no_chars;n+=2)
@@ -647,9 +596,8 @@ int c2w(unsigned char *data, word *buffer, int no_chars)
 	}
 	return i;
 }
-/*-----------------------------------*/
-int w2c(word *buffer, unsigned char *data, int no_words)
-{
+
+int w2c(word *buffer, unsigned char *data, int no_words) {
 	int n;
 
 	for(n=0;n<no_words<<1;n+=2)
@@ -659,9 +607,8 @@ int w2c(word *buffer, unsigned char *data, int no_words)
 	}
 	return n;
 }
-/*-----------------------------------*/
-int chg_byte_order(unsigned char *data, int no_chars)
-{
+
+int chg_byte_order(unsigned char *data, int no_chars) {
 	int i;
 	unsigned char temp;
 
@@ -673,14 +620,12 @@ int chg_byte_order(unsigned char *data, int no_chars)
 	}
 	return i;
 }
-/*-----------------------------------*/
-int chg_word_order(unsigned char *data, int no_chars)
-{
+
+int chg_word_order(unsigned char *data, int no_chars) {
 	int i;
 	unsigned char tmp_lb, tmp_hb;
 
-	for(i=2;i<(no_chars-2);i+=4)	/* without opcode & len-1 ! */
-	{
+	for(i=2;i<(no_chars-2);i+=4) { /* without opcode & len-1 ! */
 		tmp_hb = data[i];			/* save high-byte word #1 */
 		tmp_lb = data[i+1];			/* save low-byte word #1 */
 
@@ -692,17 +637,14 @@ int chg_word_order(unsigned char *data, int no_chars)
 	}
 	return i;
 }
-/*-----------------------------------*/
-word crc_alg(word *buffer, int no) /* EPOS CRC-CCITT Calcu. p.8 */
-{
+
+word crc_alg(word *buffer, int no) { /* EPOS CRC-CCITT Calcu. p.8 */
 	word shifter, c,carry,crc=0;
 
-	while(no--)
-	{
+	while(no--) {
 		shifter = 0x8000;
 		c = *buffer++;
-		do
-		{
+		do {
 			#ifdef DEBUG_CRC
 				PDEBUG_SNIP("c: 0x%04hX  shifter: 0x%04hX  ",c,shifter);
 			#endif
@@ -725,9 +667,8 @@ word crc_alg(word *buffer, int no) /* EPOS CRC-CCITT Calcu. p.8 */
 	#endif
 	return crc;
 }
-/*-----------------------------------*/
-int calc_crc(unsigned char *data, unsigned char *crc_value, int no_char)
-{
+
+int calc_crc(unsigned char *data, unsigned char *crc_value, int no_char) {
 	word buffer[32];
 	word crc_word;
 	int no_words;
@@ -741,21 +682,18 @@ int calc_crc(unsigned char *data, unsigned char *crc_value, int no_char)
 	#endif
 	return no_words;
 }
-/*-----------------------------------*/
-void prtmsg(char *desc, unsigned char *msg, int no)
-{
+
+void prtmsg(char *desc, unsigned char *msg, int no) {
 	int i;
 
 	printf("%s: ", desc);
-	for(i=0;i<no;i++)
-	{
+	for(i=0;i<no;i++) {
 		printf("\t0x%02x", msg[i]);
 	}
 	printf("\n");
 }
-/*-----------------------------------*/
-int clear_iobuffer(int fd)
-{
+
+int clear_iobuffer(int fd) {
 	int i=0;
 	unsigned char IOBuffer;
 	struct timeval tvlIO;
@@ -766,16 +704,13 @@ int clear_iobuffer(int fd)
 	FD_ZERO(&fdsetIO);
 	FD_SET(fd, &fdsetIO);
 
-	for(;;)
-	{
-		if(select(fd + 1, &fdsetIO, NULL, NULL, &tvlIO))
-		{
+	for(;;) {
+		if(select(fd + 1, &fdsetIO, NULL, NULL, &tvlIO)) {
 			read(fd, &IOBuffer, 1);
 			PDEBUG_SNIP("|%s| ",&IOBuffer);
 			i++;
 		}
-		else
-		{
+		else {
 			PDEBUG_SNIP("IO-Buffer seems to be clear :-) %d bytes read!\n",i);
 			return 0;
 		}
