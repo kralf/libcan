@@ -25,10 +25,8 @@
   *  \file can_serial.h
   *  \brief EPOS-communication over RS232
   *  \author Marc Rauer, Ralf Kaestner
-  *  <h2>Introduction</h2>
-  *
   *  This layer provides low-level mechanisms for communicating with EPOS
-  *  motion controllers over a serial connection
+  *  motion controllers over a serial connection.
   */
 
 #include <can.h>
@@ -45,7 +43,7 @@
 
 #define CAN_SERIAL_MAX_ERROR          31
 
-/** Error structure
+/** \brief Error structure
   */
 typedef struct {
   long int code;  //!< The error code.
