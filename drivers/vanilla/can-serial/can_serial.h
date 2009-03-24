@@ -30,113 +30,122 @@
   */
 
 #include <can.h>
+#include <serial.h>
 
-#define CAN_SERIAL_OKAY 		          0x4F
-#define CAN_SERIAL_FAILED		          0x46
-#define CAN_SERIAL_RESPONSE	          0x00
+#define CAN_SERIAL_OPCODE_READ                0x10
+#define CAN_SERIAL_OPCODE_WRITE               0x11
 
-#define CAN_SERIAL_BAUDRATE           38400
-#define CAN_SERIAL_DATABITS           8
-#define CAN_SERIAL_STOPBITS           1
-#define CAN_SERIAL_PARITY             none
-#define CAN_SERIAL_TIMEOUT            0.05
+#define CAN_SERIAL_OKAY 		                  0x4F
+#define CAN_SERIAL_FAILED		                  0x46
+#define CAN_SERIAL_RESPONSE	                  0x00
 
-#define CAN_SERIAL_MAX_ERROR          31
-
-/** \brief Error structure
+/** \brief Predefined CAN serial parameters
   */
-typedef struct {
-  long int code;  //!< The error code.
-  char* msg;      //!< The error message.
-} can_serial_error_t;
+#define CAN_SERIAL_PARAMETER_DEVICE           0
+#define CAN_SERIAL_PARAMETER_BAUDRATE         1
+#define CAN_SERIAL_PARAMETER_DATABITS         2
+#define CAN_SERIAL_PARAMETER_STOPBITS         3
+#define CAN_SERIAL_PARAMETER_PARITY           4
+#define CAN_SERIAL_PARAMETER_TIMEOUT          5
 
-/** Convert the msg-array defined in libepos.c to the data-array defined
-  * in libserial.c.
-  *	\note	This conversion is necessary, because msg-array in libepos.c relies
-  *   strongly on CAN protocol.
-  * \param[in] can_id Node-ID
-  * \param[in] msg Array of char containig the msg-array
-  * \param[out] data Array of char to store converted data-array
-  *	\return Number of bytes in the data frame to send
+/** \brief Predefined CAN serial error codes
+  */
+#define CAN_SERIAL_ERROR_NONE                 0
+#define CAN_SERIAL_ERROR_CONVERT              1
+#define CAN_SERIAL_ERROR_SEND                 2
+#define CAN_SERIAL_ERROR_READ                 3
+#define CAN_SERIAL_ERROR_WRITE                4
+#define CAN_SERIAL_ERROR_NO_RESPONSE          5
+#define CAN_SERIAL_ERROR_UNEXPECTED_RESPONSE  6
+#define CAN_SERIAL_ERROR_CRC                  7
+
+/** \brief Predefined CAN serial error descriptions
+  */
+extern const char* can_serial_errors[];
+
+/** \brief Predefined CAN serial parameters
+  */
+extern can_parameter_t can_serial_parameters[];
+
+/** Convert an EPOS message into serial data.
+  *	\note	This conversion is necessary to make EPOS messages compliant
+  *   with the CAN protocol.
+  * \param[in] dev The sending CAN device for which to convert the message.
+  * \param[in] message The CAN message to be converted.
+  * \param[out] data An array to store the converted data frame.
+  * \return The number of bytes in the data frame to be sent or the
+  *   negative error code.
   */
 int can_serial_from_epos(
-  int can_id,
-  unsigned char* msg,
+  can_device_p dev,
+  can_message_p message,
   unsigned char* data);
 
-/** Convert the data-array defined in libserial.c to the cpcmsg-structure
-  * defined in libepos.c. This function also calls read_SDO_msg_handler()
-  * in libepos.c, which handles the incoming messages.
-  *	\note This conversion is necessary, because cpcmsg-structure in libepos.c
-  *   assumes that the message was received by CAN protocol.
-  * \param[in] data_send Array of char representing the data frame sent to EPOS
-  * \param[out] data_recv Array of char representing the data frame received
-  *   from EPOS
+/** Convert serial data to an EPOS message.
+  *	\note This conversion is necessary in order to provide CAN protocol
+  *   messages to libepos.
+  * \param[in] dev The receiving CAN device for which to convert the message.
+  * \param[in] data An array containing the data frame sent to EPOS.
+  * \param[in,out] message The CAN message to be converted.
+  * \return The resulting negative error code.
   */
-void can_serial_to_epos(
-  unsigned char* data_send,
-  unsigned char* data_recv);
+int can_serial_to_epos(
+  can_device_p dev,
+  unsigned char* data,
+  can_message_p message);
 
-/** Open a device using termios for configuration.
-  *	\warning Function exits program, if there is no/wrong device!
-  * \param[in] dev_name Name of the device (/dev/ttyS0 for first serial port)
-  * \return 0: Device successfully opened, < 0: Error opening device
+/** Send serial data frame to EPOS.
+  * \param[in] dev The open CAN serial device to send data to.
+  * \param[in] data An array containing the serial data frame to be sent.
+  * \param[in] num The size of the serial data frame to be sent.
+  * \return The number of bytes sent to the CAN serial device or the
+  *   negative error code.
   */
-int can_serial_open(
-  const char* dev_name);
-
-/** Close an open device.
-  * \return 0: Device successfully closed, < 0: Error closing device
-  */
-int can_serial_close(void);
-
-/** Send data frame to EPOS
-  * \param[in] data Array containing the data frame to be sent
-  * \param[in] num Size of the data frame to be sent
-  * \return Number of bytes sent
-  */
-ssize_t can_serial_send(
+int can_serial_send(
+  can_device_p dev,
   unsigned char* data,
   ssize_t num);
 
-/** Receive data frame to EPOS
-  * \param[out] data Array representing the received data frame
-  * \return Number of bytes received
+/** Receive serial data frame from EPOS.
+  * \param[in] dev The open CAN serial device to reveice data from.
+  * \param[out] data An array representing the serial data frame received.
+  * \return The number of bytes received from the CAN serial device or the
+  *   negative error code.
   */
-ssize_t can_serial_receive(
+int can_serial_receive(
+  can_device_p dev,
   unsigned char* data);
 
-/** Change order of databytes in the data frame. The first two char will be
-  * ignored, the following chars will be changed by each other.
-  *	\note Necessary according EPOS Communication guide.
-  * \param[in,out] data Array of bytes for which to change order
-  * \param[in] num Number of bytes in the array (length)
-  *	\return	Number of changed bytes within the data frame
+/** Change the order of bytes in the data frame. The first two characters
+  * will be ignored, the following characters will be reordered.
+  *	\note This is necessary according to the EPOS Communication guide.
+  * \param[in,out] data An array of bytes for which to change the order.
+  * \param[in] num The number of bytes in the array.
+  *	\return	The number of reordered bytes within the data frame.
   */
 ssize_t can_serial_change_byte_order(
   unsigned char* data,
   ssize_t num);
 
-/** Change order of datawords (two chars) in the data frame. The first two
-  * chars will be ignored, the following chars will be grouped by two and
-  * these groups changed by each other.
-  *	\note	Necessary according EPOS Communication guide.
-  * \param[in,out] data Array of char for which to change order
-  * \param[in] num Number of bytes in the array (length)
-  *	\return	Number of changed bytes within the data frame.
+/** Change the order of words in the data frame. The first two characters will
+  * be ignored, the following characters will be reordered in groups of two.
+  * \note This is necessary according to the EPOS Communication guide.
+  * \param[in,out] data An array of words for which to change order.
+  * \param[in] num The number of bytes in the word array.
+  * \return The number of reordered bytes within the data frame.
   */
 ssize_t can_serial_change_word_order(
   unsigned char* data,
   ssize_t num);
 
-/** Calculate 16-bit CRC checksum using CRC-CCITT algorithm.
-  *	\note Calculation has to include all bytes in the data frame. Internally
-  *   the array of char is transformed to an array of words to calculate the
-  *   CRC. The CRC value as a word is	then tranformed back to an array of char.
-  * \param[in] data Array of bytes representing the data frame
-  * \param[in] num Number of bytes in the data frame
-  * \param[out] crc_value Array of two bytes to store the CRC-word
-  *	\return	Number of words built from the array.
+/** Calculate a 16-bit CRC checksum using CRC-CCITT algorithm.
+  *	\note Calculation has to include all bytes in the data frame. Internally,
+  *   the array is transformed to an array of words in order to calculate the
+  *   CRC. The CRC word is then tranformed back to an array of characters.
+  * \param[in] data An array of bytes representing the data frame.
+  * \param[in] num The number of bytes in the data frame.
+  * \param[out] crc_value An array of two bytes to store the CRC-word.
+  *	\return	The number of words built from the array.
   */
 ssize_t can_serial_calc_crc(
   unsigned char* data,
@@ -144,9 +153,9 @@ ssize_t can_serial_calc_crc(
   unsigned char* crc_value);
 
 /** Implementation of the CRC-CCITT algorithm.
-  * \param[in] data Array of words containing the data frame
-  * \param[in] num Number of words in the data frame
-  *	\return	Calculated CRC-value.
+  * \param[in] data An array of words containing the data frame.
+  * \param[in] num The number of words in the data frame.
+  *	\return	The calculated CRC-value.
   */
 unsigned short can_serial_crc_alg(
   unsigned short* data,

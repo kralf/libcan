@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef _CAN_H
-#define _CAN_H
+#ifndef CAN_H
+#define CAN_H
 
 /** \file
   * \brief Generic CAN communication
@@ -27,39 +27,74 @@
   * These methods are implemented by all CAN communication backends.
   */
 
+#include <stdlib.h>
+
+/** \brief Predefined CAN error codes
+  */
+#define CAN_ERROR_NONE                      0
+#define CAN_ERROR_INIT                      1
+#define CAN_ERROR_CLOSE                     2
+#define CAN_ERROR_SEND                      3
+#define CAN_ERROR_RECEIVE                   4
+
+/** \brief Structure defining a CAN parameter
+  */
+typedef struct can_parameter_t {
+  char name[64];                  //!< The CAN parameter name.
+  char value[64];                 //!< The CAN parameter value.
+} can_parameter_t, *can_parameter_p;
+
 /** \brief Structure defining a CAN message
   */
-typedef struct {
-  int id;                    //!< The CAN message identifier.
-  unsigned char content[8];  //!< The actual CAN message content.
-} can_message_t;
+typedef struct can_message_t {
+  int id;                         //!< The CAN message identifier.
+  unsigned char content[8];       //!< The actual CAN message content.
+} can_message_t, *can_message_p;
+
+/** \brief Structure defining a CAN device
+  */
+typedef struct can_device_t {
+  void* comm_dev;                 //!< The CAN communication device.
+
+  ssize_t num_sent;               //!< The number of CAN messages sent.
+  ssize_t num_received;           //!< The number of CAN messages read.
+} can_device_t, *can_device_p;
 
 /** \brief Initialize CAN communication by opening devices
-  * \param[in] dev_name The name of the character device to be used for CAN
-  *   communication.
+  * \param[in] dev The CAN device to be initialized.
+  * \param[in] parameters An array of CAN device parameters.
+  * \param[in] num_parameters The number of CAN device parameters.
+  * \return The resulting error code.
   */
-void can_init(
-  const char* dev_name);
+int can_init(
+  can_device_p dev,
+  can_parameter_t parameters[],
+  ssize_t num_parameters);
 
 /** \brief Close CAN communication by closing devices
+  * \param[in] dev The CAN device to be closed.
+  * \return The resulting error code.
   */
-void can_close(void);
+int can_close(
+  can_device_p dev);
 
 /** \brief Send a CAN message
+  * \param[in] dev The CAN device to be used for sending the message.
   * \param[in] message The CAN message to be sent.
+  * \return The resulting error code.
   */
-void can_send_message(
-  can_message_t* message);
+int can_send_message(
+  can_device_p dev,
+  can_message_p message);
 
-/** \brief Asynchronously read a CAN message
-  * This function instantly returns to the caller.
+/** \brief Synchronously receive a CAN message
+  * \param[in] dev The CAN device to be used for receiving the message.
+  * \param[in,out] message The sent CAN message that will be transformed
+  *   into the CAN message received.
+  * \return The resulting error code.
   */
-void can_read_message(void);
-
-/** \brief Asynchronous CAN read message handler
-  * \param[in] message The received CAN message.
-  */
-void can_read_message_handler(
-  const can_message_t* message);
+int can_receive_message(
+  can_device_p dev,
+  can_message_p message);
 
 #endif
