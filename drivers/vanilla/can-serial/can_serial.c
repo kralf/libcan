@@ -33,6 +33,7 @@ const char* can_serial_errors[] = {
   "success",
   "CAN serial conversion error",
   "CAN serial send failed",
+  "CAN serial receive failed",
   "error reading from CAN serial device",
   "error writing to CAN serial device",
   "CAN serial device not responding",
@@ -75,12 +76,16 @@ int can_init(can_device_p dev, can_parameter_t parameters[], ssize_t
       atoi(params[CAN_SERIAL_PARAMETER_PARITY].value),
       atof(params[CAN_SERIAL_PARAMETER_TIMEOUT].value)))
     return CAN_ERROR_NONE;
-  else
+  else {
+    free(dev->comm_dev);
+    dev->comm_dev = 0;
+
     return CAN_ERROR_INIT;
+  }
 }
 
 int can_close(can_device_p dev) {
-  if (!serial_close(dev->comm_dev)) {
+  if (dev->comm_dev && !serial_close(dev->comm_dev)) {
     free(dev->comm_dev);
     dev->comm_dev = 0;
 
@@ -95,7 +100,7 @@ int can_send_message(can_device_p dev, can_message_p message) {
   int num;
 
   num = can_serial_from_epos(dev, message, data);
-	if ((num > 0) && (can_serial_send(dev, data, num) > 0)) {
+ 	if ((num > 0) && (can_serial_send(dev, data, num) > 0)) {
     ++dev->num_sent;
     return CAN_ERROR_NONE;
   }
@@ -224,6 +229,9 @@ int can_serial_send(can_device_p dev, unsigned char* data, ssize_t num) {
 	unsigned char crc_value[2];
 	int i, num_recv = 0;
 
+  if (!dev->comm_dev)
+    return -CAN_SERIAL_ERROR_SEND;
+
 	can_serial_calc_crc(data, num, crc_value);
 	data[num-2] = crc_value[0];
 	data[num-1] = crc_value[1];
@@ -262,6 +270,9 @@ int can_serial_send(can_device_p dev, unsigned char* data, ssize_t num) {
 int can_serial_receive(can_device_p dev, unsigned char* data) {
 	unsigned char buffer, crc_value[2];
 	int i, num_recv = 0, num_exp = 0;
+
+  if (!dev->comm_dev)
+    return -CAN_SERIAL_ERROR_RECEIVE;
 
   num_recv = serial_read(dev->comm_dev, &buffer, 1);
   if ((num_recv == 1) && (buffer == CAN_SERIAL_RESPONSE))

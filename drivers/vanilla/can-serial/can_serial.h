@@ -53,11 +53,12 @@
 #define CAN_SERIAL_ERROR_NONE                 0
 #define CAN_SERIAL_ERROR_CONVERT              1
 #define CAN_SERIAL_ERROR_SEND                 2
-#define CAN_SERIAL_ERROR_READ                 3
-#define CAN_SERIAL_ERROR_WRITE                4
-#define CAN_SERIAL_ERROR_NO_RESPONSE          5
-#define CAN_SERIAL_ERROR_UNEXPECTED_RESPONSE  6
-#define CAN_SERIAL_ERROR_CRC                  7
+#define CAN_SERIAL_ERROR_RECEIVE              3
+#define CAN_SERIAL_ERROR_READ                 4
+#define CAN_SERIAL_ERROR_WRITE                5
+#define CAN_SERIAL_ERROR_NO_RESPONSE          6
+#define CAN_SERIAL_ERROR_UNEXPECTED_RESPONSE  7
+#define CAN_SERIAL_ERROR_CRC                  8
 
 /** \brief Predefined CAN serial error descriptions
   */
