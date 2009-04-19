@@ -41,7 +41,7 @@ const char* can_serial_errors[] = {
   "CAN serial checksum error",
 };
 
-can_parameter_t can_serial_parameters[] = {
+can_parameter_t can_serial_default_parameters[] = {
   {"name", "/dev/ttyS0"},
   {"baudrate", "38400"},
   {"databits", "8"},
@@ -52,33 +52,37 @@ can_parameter_t can_serial_parameters[] = {
 
 int can_init(can_device_p dev, can_parameter_t parameters[], ssize_t
   num_parameters) {
+  ssize_t num_defp = sizeof(can_serial_default_parameters)/
+    sizeof(can_parameter_t);
   memset(dev, 0, sizeof(can_device_t));
   dev->comm_dev = malloc(sizeof(serial_device_t));
-  ssize_t num_params = sizeof(can_serial_parameters)/sizeof(can_parameter_t);
-  can_parameter_t params[num_params];
+  dev->parameters = malloc(sizeof(can_serial_default_parameters));
+  memcpy(dev->parameters, can_serial_default_parameters,
+    sizeof(can_serial_default_parameters));
   int i, j;
 
-  for (i = 0; i < num_params; ++i) {
-    params[i] = can_serial_parameters[i];
-    for (j = 0; j < num_parameters; ++j)
-      if (!strcmp(params[i].name, parameters[j].name)) {
-      params[i] = parameters[j];
+  for (i = 0; i < num_parameters; ++i) {
+    for (j = 0; j < num_defp; ++j)
+      if (!strcmp(parameters[i].name, dev->parameters[j].name)) {
+      strcpy(dev->parameters[j].value, parameters[i].value);
       break;
     }
   }
 
   if (!serial_open(dev->comm_dev,
-      params[CAN_SERIAL_PARAMETER_DEVICE].value) &&
+      dev->parameters[CAN_SERIAL_PARAMETER_DEVICE].value) &&
     !serial_setup(dev->comm_dev,
-      atoi(params[CAN_SERIAL_PARAMETER_BAUDRATE].value),
-      atoi(params[CAN_SERIAL_PARAMETER_DATABITS].value),
-      atoi(params[CAN_SERIAL_PARAMETER_STOPBITS].value),
-      atoi(params[CAN_SERIAL_PARAMETER_PARITY].value),
-      atof(params[CAN_SERIAL_PARAMETER_TIMEOUT].value)))
+      atoi(dev->parameters[CAN_SERIAL_PARAMETER_BAUDRATE].value),
+      atoi(dev->parameters[CAN_SERIAL_PARAMETER_DATABITS].value),
+      atoi(dev->parameters[CAN_SERIAL_PARAMETER_STOPBITS].value),
+      atoi(dev->parameters[CAN_SERIAL_PARAMETER_PARITY].value),
+      atof(dev->parameters[CAN_SERIAL_PARAMETER_TIMEOUT].value)))
     return CAN_ERROR_NONE;
   else {
     free(dev->comm_dev);
     dev->comm_dev = 0;
+    free(dev->parameters);
+    dev->parameters = 0;
 
     return CAN_ERROR_INIT;
   }
@@ -88,6 +92,8 @@ int can_close(can_device_p dev) {
   if (dev->comm_dev && !serial_close(dev->comm_dev)) {
     free(dev->comm_dev);
     dev->comm_dev = 0;
+    free(dev->parameters);
+    dev->parameters = 0;
 
     return CAN_ERROR_NONE;
   }

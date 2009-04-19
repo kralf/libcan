@@ -66,7 +66,7 @@ extern const char* can_serial_errors[];
 
 /** \brief Predefined CAN serial parameters
   */
-extern can_parameter_t can_serial_parameters[];
+extern can_parameter_t can_serial_default_parameters[];
 
 /** Convert an EPOS message into serial data.
   *	\note	This conversion is necessary to make EPOS messages compliant

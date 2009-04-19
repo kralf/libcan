@@ -56,6 +56,8 @@ typedef struct can_message_t {
 typedef struct can_device_t {
   void* comm_dev;                 //!< The CAN communication device.
 
+  can_parameter_t* parameters;    //!< The CAN configuration parameters.
+
   ssize_t num_sent;               //!< The number of CAN messages sent.
   ssize_t num_received;           //!< The number of CAN messages read.
 } can_device_t, *can_device_p;
