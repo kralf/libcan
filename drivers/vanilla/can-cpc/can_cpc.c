@@ -29,143 +29,210 @@
 #include <unistd.h>
 #include <signal.h>
 #include <termios.h>
-#include <pdebug.h>
 
-#undef ASL_DEBUG
+#include <cpclib.h>
 
 #include "can_cpc.h"
 
-/**
- * Different macros for watching on read, write or both on a CAN channel.
- * Also stdin is watched for a user input.
- */
+const char* can_cpc_errors[] = {
+  "success",
+  "error opening CAN-CPC device",
+  "error closing CAN-CPC device",
+  "error setting CAN-CPC device parameters",
+  "CAN-CPC device select timeout",
+  "error sending to CAN-CPC device",
+  "error receiving from CAN-CPC device",
+};
 
-#define SELECT FD_ZERO(&readfds); \
-               FD_SET(0, &readfds); \
-               FD_SET(cpcfd, &readfds); \
-               tv.tv_sec = 0; \
-               tv.tv_usec = 500000; \
-               nfds = select(cpcfd+1, &readfds, NULL, NULL, &tv);
+can_parameter_t can_cpc_default_parameters[] = {
+  {"name", "/dev/cpc_usb0"},
+  {"timeout", "0.01"},
+};
 
-#define SELECT_WR FD_ZERO(&writefds); \
-                  FD_SET(0, &readfds); \
-                  FD_SET(cpcfd, &writefds); \
-                  tv.tv_sec = 0; \
-                  tv.tv_usec = 500000; \
-                  nfds = select(cpcfd+1, NULL, &writefds, NULL, &tv);
+void can_cpc_handle(int handle, const CPC_MSG_T* msg, void* custom);
 
-static can_message_t message;
+int can_init(can_device_p dev, can_parameter_t parameters[], ssize_t
+  num_parameters) {
+  ssize_t num_defp = sizeof(can_cpc_default_parameters)/
+    sizeof(can_parameter_t);
+  memset(dev, 0, sizeof(can_device_t));
+  dev->comm_dev = malloc(sizeof(can_cpc_device_t));
+  dev->parameters = malloc(sizeof(can_cpc_default_parameters));
+  memcpy(dev->parameters, can_cpc_default_parameters,
+    sizeof(can_cpc_default_parameters));
+  int i, j;
 
-unsigned char btr0, btr1;
-int handle;
-char interface[32];
-int zchn, nfds, cpcfd;
-CPC_INIT_PARAMS_T *CPCInitParamsPtr;
-fd_set readfds, writefds;
-struct timeval tv;
-
-void cpc_read_message_handler(int handle, const CPC_MSG_T *cpcmsg);
-
-void can_init(const char* dev_name) {
-  bzero(&message, sizeof(can_message_t));
-
-  btr0=0x00;
-  btr1=0x14;
-
-  /* Using Interface cpc_usb0 */
-  strcpy(interface, dev_name);
-
-  /*Open the CAN*/
-  if ((handle = CPC_OpenChannel(interface)) < 0) {
-    fprintf(stderr, "ERROR: %s\n", CPC_DecodeErrorMsg(handle));
-    exit(1);
-  }
-  PDEBUG("%s is CAN interface -> handle %d\n", interface, handle);
-
-  /*Define Handlers*/
-  CPC_AddHandler(handle, cpc_read_message_handler);
-
-  /* This sets up the parameters used to initialize the CAN controller */
-  PDEBUG("Initializing CAN-Controller ... ");
-
-  CPCInitParamsPtr = CPC_GetInitParamsPtr(handle);
-  CPCInitParamsPtr->canparams.cc_type = SJA1000;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.btr0 = btr0;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.btr1 = btr1;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.outp_contr = 0xda;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code0 = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code1 = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code2 = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code3 = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask0 = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask1 = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask2 = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask3 = 0xff;
-  CPCInitParamsPtr->canparams.cc_params.sja1000.mode = 0;
-
-  CPC_CANInit(handle, 0);
-  PDEBUG("Done!\n\n");
-
-  cpcfd = CPC_GetFdByHandle(handle);
-
-  PDEBUG("Switch ON transimssion of CAN messages from CPC to PC\n");
-
-  /* switch on transmission of CAN messages from CPC to PC */
-  CPC_Control(handle, CONTR_CAN_Message | CONTR_CONT_ON);
-  PDEBUG("Initialization finished...\n");
-}
-
-void can_close() {
-  // Nothing to do here
-}
-
-void can_send_message(can_message_t* message) {
-  static CPC_CAN_MSG_T cmsg = {0x00L, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
-  int i, retval = 0;
-
-  cmsg.id=message->id;                  //put the can id of the device in cmsg
-  cmsg.length=8;                        //put the lenght of the message in cmsg
-  for(i = 0; i < cmsg.length; i++)
-    cmsg.msg[i] = message->content[i];  //put the message in cmsg
-
-  SELECT_WR                             //enable write en read
-  if (FD_ISSET(cpcfd, &writefds)) {     //if chanel open and writable (???)
-    //send the message of lenght 8 to the device of id can_id
-    while ((retval = CPC_SendMsg(handle, 0, &cmsg)) ==
-      CPC_ERR_CAN_NO_TRANSMIT_BUF)
-      usleep(10);
-
-    if (retval == 0) {
-      //wait for the reply
-      PDEBUG("Sent CAN message, now waiting for reply...\n");
-      can_read_message();
-      PDEBUG("Received CAN reply\n");
-    }
-    else
-      PDEBUG_ERR("%s\n", CPC_DecodeErrorMsg(retval));
-  }
-}
-
-void can_read_message() {
-  /* task for reading can */
-  SELECT                               //enable read (???)
-
-  if (nfds > 0) {
-    if (FD_ISSET(cpcfd, &readfds)) {   //check, if messages have been received
-      do {;}                           //wait
-      while(CPC_Handle(handle));       //until OK is send
+  for (i = 0; i < num_parameters; ++i) {
+    for (j = 0; j < num_defp; ++j)
+      if (!strcmp(parameters[i].name, dev->parameters[j].name)) {
+      strcpy(dev->parameters[j].value, parameters[i].value);
+      break;
     }
   }
-  else if(nfds == -1)                  //if error
-    perror(interface);                 //print error
+
+  if (!can_cpc_open(dev->comm_dev,
+      dev->parameters[CAN_CPC_PARAMETER_DEVICE].value) &&
+    !can_cpc_setup(dev->comm_dev,
+      atof(dev->parameters[CAN_CPC_PARAMETER_TIMEOUT].value)))
+    return CAN_ERROR_NONE;
+  else {
+    free(dev->comm_dev);
+    dev->comm_dev = 0;
+    free(dev->parameters);
+    dev->parameters = 0;
+
+    return CAN_ERROR_INIT;
+  }
 }
 
-void cpc_read_message_handler(int handle, const CPC_MSG_T *cpcmsg) {
-  int i;
+int can_close(can_device_p dev) {
+  if (dev->comm_dev && !can_cpc_close(dev->comm_dev)) {
+    free(dev->comm_dev);
+    dev->comm_dev = 0;
+    free(dev->parameters);
+    dev->parameters = 0;
 
-  message.id = cpcmsg->msg.canmsg.id;
-  for(i = 0; i < cpcmsg->msg.canmsg.length; i++)
-    message.content[i] = cpcmsg->msg.canmsg.msg[i];
+    return CAN_ERROR_NONE;
+  }
+  else
+    return CAN_ERROR_CLOSE;
+}
 
-  can_read_message_handler(&message);
+int can_send_message(can_device_p dev, can_message_p message) {
+  if (!can_cpc_send(dev->comm_dev, message)) {
+    ++dev->num_sent;
+    return CAN_ERROR_NONE;
+  }
+  else
+    return CAN_ERROR_SEND;
+}
+
+int can_receive_message(can_device_p dev, can_message_p message) {
+  if (!can_cpc_receive(dev->comm_dev, message)) {
+    ++dev->num_received;
+    return CAN_ERROR_NONE;
+  }
+  else
+    return CAN_ERROR_RECEIVE;
+}
+
+int can_cpc_open(can_cpc_device_p dev, const char* name) {
+  dev->handle = CPC_OpenChannel((char*)name);
+
+  if (dev->handle >= 0) {
+    dev->fd = -1;
+    strcpy(dev->name, name);
+    dev->num_sent = 0;
+    dev->num_received = 0;
+
+    CPC_AddHandlerEx(dev->handle, can_cpc_handle, dev);
+  }
+  else
+    return CAN_CPC_ERROR_OPEN;
+
+  return CAN_CPC_ERROR_NONE;
+}
+
+int can_cpc_close(can_cpc_device_p dev) {
+  if (!CPC_CANExit(dev->handle, 0) &&
+    !CPC_CloseChannel(dev->handle)) {
+    dev->name[0] = 0;
+    dev->fd = -1;
+  }
+  else
+    return CAN_CPC_ERROR_CLOSE;
+
+  return CAN_CPC_ERROR_NONE;
+}
+
+int can_cpc_setup(can_cpc_device_p dev, double timeout) {
+  CPC_INIT_PARAMS_T* parameters;
+
+  parameters = CPC_GetInitParamsPtr(dev->handle);
+  parameters->canparams.cc_type = SJA1000;
+  parameters->canparams.cc_params.sja1000.btr0 = 0x00;
+  parameters->canparams.cc_params.sja1000.btr1 = 0x14;
+  parameters->canparams.cc_params.sja1000.outp_contr = 0xda;
+  parameters->canparams.cc_params.sja1000.acc_code0 = 0xff;
+  parameters->canparams.cc_params.sja1000.acc_code1 = 0xff;
+  parameters->canparams.cc_params.sja1000.acc_code2 = 0xff;
+  parameters->canparams.cc_params.sja1000.acc_code3 = 0xff;
+  parameters->canparams.cc_params.sja1000.acc_mask0 = 0xff;
+  parameters->canparams.cc_params.sja1000.acc_mask1 = 0xff;
+  parameters->canparams.cc_params.sja1000.acc_mask2 = 0xff;
+  parameters->canparams.cc_params.sja1000.acc_mask3 = 0xff;
+  parameters->canparams.cc_params.sja1000.mode = 0;
+  if (CPC_CANInit(dev->handle, 0))
+    return CAN_CPC_ERROR_SETUP;
+
+  dev->fd = CPC_GetFdByHandle(dev->handle);
+  dev->timeout = timeout;  
+
+  if (CPC_Control(dev->handle, CONTR_CAN_Message | CONTR_CONT_ON))
+    return CAN_CPC_ERROR_SETUP;
+
+  return CAN_CPC_ERROR_NONE;
+}
+
+int can_cpc_send(can_cpc_device_p dev, can_message_p message) {
+  CPC_CAN_MSG_T msg = {0x00L, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
+  struct timeval time;
+  fd_set set;
+  int i, error;
+
+  msg.id = message->id;
+  msg.length = sizeof(message->content);
+  memcpy(msg.msg, message->content, msg.length);
+
+  time.tv_sec = 0;
+  time.tv_usec = dev->timeout*1e6;
+
+  FD_ZERO(&set);
+  FD_SET(dev->fd, &set);
+
+  error = select(dev->fd+1, NULL, &set, NULL, &time);
+  if (error == 0)
+    return CAN_CPC_ERROR_TIMEOUT;
+
+  while ((error = CPC_SendMsg(dev->handle, 0, &msg)) ==
+    CPC_ERR_CAN_NO_TRANSMIT_BUF)
+    usleep(10);
+  if (!error)
+    ++dev->num_sent;
+  else
+    return CAN_CPC_ERROR_SEND;
+
+  return CAN_CPC_ERROR_NONE;
+}
+
+int can_cpc_receive(can_cpc_device_p dev, can_message_p message) {
+  struct timeval time;
+  fd_set set;
+  int error;
+
+  time.tv_sec = 0;
+  time.tv_usec = dev->timeout*1e6;
+
+  FD_ZERO(&set);
+  FD_SET(dev->fd, &set);
+
+  error = select(dev->fd+1, &set, NULL, NULL, &time);
+  if (error == 0)
+    return CAN_CPC_ERROR_TIMEOUT;
+
+  while (CPC_Handle(dev->handle))
+    usleep(10);
+  *message = dev->msg_received;
+
+  return CAN_CPC_ERROR_NONE;
+}
+
+void can_cpc_handle(int handle, const CPC_MSG_T* msg, void* custom) {
+  can_cpc_device_p dev = custom;
+
+  dev->msg_received.id = msg->msg.canmsg.id;
+  memcpy(dev->msg_received.content, msg->msg.canmsg.msg,
+    msg->msg.canmsg.length);
+
+  ++dev->num_received;
 }

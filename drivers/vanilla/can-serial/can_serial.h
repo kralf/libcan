@@ -23,10 +23,10 @@
 
 /**
   *  \file can_serial.h
-  *  \brief EPOS-communication over RS232
+  *  \brief CAN communication over EPOS RS232
   *  \author Marc Rauer, Ralf Kaestner
-  *  This layer provides low-level mechanisms for communicating with EPOS
-  *  motion controllers over a serial connection.
+  *  This layer provides low-level mechanisms for CAN communication via EPOS
+  *  controllers over a RS232 serial connection.
   */
 
 #include <can.h>

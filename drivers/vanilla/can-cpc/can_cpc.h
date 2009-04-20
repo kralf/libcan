@@ -18,11 +18,98 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef _CAN_CPC_H
-#define _CAN_CPC_H
+#ifndef CAN_CPC_H
+#define CAN_CPC_H
 
-#include <cpc.h>
-#include <cpclib.h>
+/**
+  *  \file can_cpc.h
+  *  \brief CAN communication over CAN-CPC
+  *  \author Ralf Kaestner
+  *  This layer provides low-level mechanisms for CAN communication via
+  *  CAN-CPC hardware.
+  */
+
 #include <can.h>
+#include <cpc.h>
+
+/** \brief Predefined CAN-CPC parameters
+  */
+#define CAN_CPC_PARAMETER_DEVICE           0
+#define CAN_CPC_PARAMETER_TIMEOUT          1
+
+/** \brief Predefined CAN-CPC error codes
+  */
+#define CAN_CPC_ERROR_NONE                 0
+#define CAN_CPC_ERROR_OPEN                 1
+#define CAN_CPC_ERROR_CLOSE                2
+#define CAN_CPC_ERROR_SETUP                3
+#define CAN_CPC_ERROR_TIMEOUT              4
+#define CAN_CPC_ERROR_SEND                 5
+#define CAN_CPC_ERROR_RECEIVE              6
+
+/** \brief Predefined CAN-CPC error descriptions
+  */
+extern const char* can_cpc_errors[];
+
+/** \brief Predefined CAN-CPC parameters
+  */
+extern can_parameter_t can_cpc_default_parameters[];
+
+/** \brief CAN-CPC device structure
+  */
+typedef struct can_cpc_device_t {
+  int handle;                   //!< Device handle.
+  int fd;                       //!< File descriptor.
+  char name[256];               //!< Device name.
+
+  double timeout;               //!< Device select timeout in [s].
+
+  can_message_t msg_received;   //!< The most recent message received.
+  ssize_t num_sent;             //!< Number of messages sent from device.
+  ssize_t num_received;         //!< Number of messages received by device.
+} can_cpc_device_t, *can_cpc_device_p;
+
+/** \brief Open the CAN-CPC device with the specified name
+  * \param[in] dev The CAN-CPC device to be opened.
+  * \param[in] name The name of the CAN-CPC to be opened.
+  * \return The resulting error code.
+  */
+int can_cpc_open(
+  can_cpc_device_p dev,
+  const char* name);
+
+/** \brief Close an open CAN-CPC device
+  * \param[in] dev The open CAN-CPC device to be closed.
+  * \return The resulting error code.
+  */
+int can_cpc_close(
+  can_cpc_device_p dev);
+
+/** \brief Setup an already opened CAN-CPC device
+  * \param[in] dev The open serial CAN-CPC to be set up.
+  * \param[in] timeout The device select timeout to be set in [s].
+  * \return The resulting error code.
+  */
+int can_cpc_setup(
+  can_cpc_device_p dev,
+  double timeout);
+
+/** \brief Send message over open CAN-CPC device
+  * \param[in] dev The open CAN-CPC device to send the message over.
+  * \param[in] message The CAN message to be sent over the device.
+  * \return The resulting error code.
+  */
+int can_cpc_send(
+  can_cpc_device_p dev,
+  can_message_p message);
+
+/** \brief Receive message on open CAN-CPC device
+  * \param[in] dev The open CAN-CPC device to receive the message on.
+  * \param[out] message The CAN message received on the device.
+  * \return The resulting error code.
+  */
+int can_cpc_receive(
+  can_cpc_device_p dev,
+  can_message_p message);
 
 #endif
