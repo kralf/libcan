@@ -50,50 +50,63 @@ can_parameter_t can_serial_default_parameters[] = {
   {"timeout", "0.1"},
 };
 
-int can_init(can_device_p dev, can_parameter_t parameters[], ssize_t
-  num_parameters) {
-  ssize_t num_defp = sizeof(can_serial_default_parameters)/
-    sizeof(can_parameter_t);
-  memset(dev, 0, sizeof(can_device_t));
-  dev->comm_dev = malloc(sizeof(serial_device_t));
-  dev->parameters = malloc(sizeof(can_serial_default_parameters));
-  memcpy(dev->parameters, can_serial_default_parameters,
-    sizeof(can_serial_default_parameters));
-  int i, j;
+int can_open(can_device_p dev) {
+  if (!dev->comm_dev)
+    dev->comm_dev = malloc(sizeof(serial_device_t));
 
-  for (i = 0; i < num_parameters; ++i) {
-    for (j = 0; j < num_defp; ++j)
-      if (!strcmp(parameters[i].name, dev->parameters[j].name)) {
-      strcpy(dev->parameters[j].value, parameters[i].value);
-      break;
+  if (!dev->num_references) {
+    can_parameter_p parameters = malloc(sizeof(can_serial_default_parameters));
+    memcpy(parameters, can_serial_default_parameters,
+      sizeof(can_serial_default_parameters));
+    ssize_t num_parameters = sizeof(can_serial_default_parameters)/
+      sizeof(can_parameter_t);
+
+    int i, j;
+    for (i = 0; i < dev->num_parameters; ++i) {
+      for (j = 0; j < num_parameters; ++j)
+        if (!strcmp(dev->parameters[i].name, parameters[j].name)) {
+        strcpy(parameters[j].value, dev->parameters[i].value);
+        break;
+      }
     }
-  }
 
-  if (!serial_open(dev->comm_dev,
-      dev->parameters[CAN_SERIAL_PARAMETER_DEVICE].value) &&
-    !serial_setup(dev->comm_dev,
-      atoi(dev->parameters[CAN_SERIAL_PARAMETER_BAUDRATE].value),
-      atoi(dev->parameters[CAN_SERIAL_PARAMETER_DATABITS].value),
-      atoi(dev->parameters[CAN_SERIAL_PARAMETER_STOPBITS].value),
-      atoi(dev->parameters[CAN_SERIAL_PARAMETER_PARITY].value),
-      atof(dev->parameters[CAN_SERIAL_PARAMETER_TIMEOUT].value)))
-    return CAN_ERROR_NONE;
-  else {
-    free(dev->comm_dev);
-    dev->comm_dev = 0;
-    free(dev->parameters);
-    dev->parameters = 0;
+    dev->num_sent = 0;
+    dev->num_received = 0;
 
-    return CAN_ERROR_INIT;
+    if (!serial_open(dev->comm_dev,
+        parameters[CAN_SERIAL_PARAMETER_DEVICE].value) &&
+      !serial_setup(dev->comm_dev,
+        atoi(parameters[CAN_SERIAL_PARAMETER_BAUDRATE].value),
+        atoi(parameters[CAN_SERIAL_PARAMETER_DATABITS].value),
+        atoi(parameters[CAN_SERIAL_PARAMETER_STOPBITS].value),
+        atoi(parameters[CAN_SERIAL_PARAMETER_PARITY].value),
+        atof(parameters[CAN_SERIAL_PARAMETER_TIMEOUT].value))) {
+      free(parameters);
+      ++dev->num_references;
+
+      return CAN_ERROR_NONE;
+    }
+    else {
+      free(parameters);
+      free(dev->comm_dev);
+      dev->comm_dev = 0;
+
+      return CAN_ERROR_OPEN;
+    }
   }
 }
 
 int can_close(can_device_p dev) {
-  if (dev->comm_dev && !serial_close(dev->comm_dev)) {
-    free(dev->comm_dev);
-    dev->comm_dev = 0;
-    free(dev->parameters);
-    dev->parameters = 0;
+  if (dev->num_references) {
+    --dev->num_references;
+
+    if (!dev->num_references) {
+      if (serial_close(dev->comm_dev))
+        return CAN_ERROR_CLOSE;
+
+      free(dev->comm_dev);
+      dev->comm_dev = 0;
+    }
 
     return CAN_ERROR_NONE;
   }

@@ -3,9 +3,9 @@ LDFLAGS += -L../can -L../cpc-usb
 
 PREFIX = /usr/local
 
-libcan-cpc.so: can_cpc.c
+libcan-cpc.so: ../can/can.h ../can/can.c can_cpc.h can_cpc.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o libcan-cpc.so \
-	can_cpc.c -lcpc
+	../can/can.c can_cpc.c -lcpc
 	ln -sf $(PWD)/libcan-cpc.so ../can/libcan.so
 
 install: libcan-cpc.so

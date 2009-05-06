@@ -3,9 +3,9 @@ LDFLAGS += -L../can -L../epos -L../../../posix/serial -lserial
 
 PREFIX = /usr/local
 
-libcan-serial.so: can_serial.h can_serial.c
+libcan-serial.so: ../can/can.c ../can/can.h can_serial.h can_serial.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o libcan-serial.so \
-	can_serial.c
+	../can/can.c can_serial.c
 	ln -sf $(PWD)/libcan-serial.so ../can/libcan.so
 
 install: libcan-serial.so

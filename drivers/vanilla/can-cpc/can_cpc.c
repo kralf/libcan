@@ -51,46 +51,59 @@ can_parameter_t can_cpc_default_parameters[] = {
 
 void can_cpc_handle(int handle, const CPC_MSG_T* msg, void* custom);
 
-int can_init(can_device_p dev, can_parameter_t parameters[], ssize_t
-  num_parameters) {
-  ssize_t num_defp = sizeof(can_cpc_default_parameters)/
-    sizeof(can_parameter_t);
-  memset(dev, 0, sizeof(can_device_t));
-  dev->comm_dev = malloc(sizeof(can_cpc_device_t));
-  dev->parameters = malloc(sizeof(can_cpc_default_parameters));
-  memcpy(dev->parameters, can_cpc_default_parameters,
-    sizeof(can_cpc_default_parameters));
-  int i, j;
+int can_open(can_device_p dev) {
+  if (!dev->comm_dev)
+    dev->comm_dev = malloc(sizeof(can_cpc_device_t));
 
-  for (i = 0; i < num_parameters; ++i) {
-    for (j = 0; j < num_defp; ++j)
-      if (!strcmp(parameters[i].name, dev->parameters[j].name)) {
-      strcpy(dev->parameters[j].value, parameters[i].value);
-      break;
+  if (!dev->num_references) {
+    can_parameter_p parameters = malloc(sizeof(can_cpc_default_parameters));
+    memcpy(parameters, can_cpc_default_parameters,
+      sizeof(can_cpc_default_parameters));
+    ssize_t num_parameters = sizeof(can_cpc_default_parameters)/
+      sizeof(can_parameter_t);
+
+    int i, j;
+    for (i = 0; i < dev->num_parameters; ++i) {
+      for (j = 0; j < num_parameters; ++j)
+        if (!strcmp(dev->parameters[i].name, parameters[j].name)) {
+        strcpy(parameters[j].value, dev->parameters[i].value);
+        break;
+      }
     }
-  }
 
-  if (!can_cpc_open(dev->comm_dev,
-      dev->parameters[CAN_CPC_PARAMETER_DEVICE].value) &&
-    !can_cpc_setup(dev->comm_dev,
-      atof(dev->parameters[CAN_CPC_PARAMETER_TIMEOUT].value)))
-    return CAN_ERROR_NONE;
-  else {
-    free(dev->comm_dev);
-    dev->comm_dev = 0;
-    free(dev->parameters);
-    dev->parameters = 0;
+    dev->num_sent = 0;
+    dev->num_received = 0;
 
-    return CAN_ERROR_INIT;
+    if (!can_cpc_open(dev->comm_dev,
+        parameters[CAN_CPC_PARAMETER_DEVICE].value) &&
+      !can_cpc_setup(dev->comm_dev,
+        atof(parameters[CAN_CPC_PARAMETER_TIMEOUT].value))) {
+      free(parameters);
+      ++dev->num_references;
+
+      return CAN_ERROR_NONE;
+    }
+    else {
+      free(parameters);
+      free(dev->comm_dev);
+      dev->comm_dev = 0;
+
+      return CAN_ERROR_OPEN;
+    }
   }
 }
 
 int can_close(can_device_p dev) {
-  if (dev->comm_dev && !can_cpc_close(dev->comm_dev)) {
-    free(dev->comm_dev);
-    dev->comm_dev = 0;
-    free(dev->parameters);
-    dev->parameters = 0;
+  if (dev->num_references) {
+    --dev->num_references;
+
+    if (!dev->num_references) {
+      if (can_cpc_close(dev->comm_dev))
+        return CAN_ERROR_CLOSE;
+
+      free(dev->comm_dev);
+      dev->comm_dev = 0;
+    }
 
     return CAN_ERROR_NONE;
   }
