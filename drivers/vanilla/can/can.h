@@ -27,7 +27,11 @@
   * These methods are implemented by all CAN communication backends.
   */
 
-#include <stdlib.h>
+#include <config.h>
+
+/** \brief Predefined CAN constants
+  */
+#define CAN_CONFIG_ARG_PREFIX               "--can-"
 
 /** \brief Predefined CAN error codes
   */
@@ -42,13 +46,6 @@
   */
 extern const char* can_errors[];
 
-/** \brief Structure defining a CAN parameter
-  */
-typedef struct can_parameter_t {
-  char name[64];                  //!< The CAN parameter name.
-  char value[64];                 //!< The CAN parameter value.
-} can_parameter_t, *can_parameter_p;
-
 /** \brief Structure defining a CAN message
   */
 typedef struct can_message_t {
@@ -61,23 +58,35 @@ typedef struct can_message_t {
 typedef struct can_device_t {
   void* comm_dev;                 //!< The CAN communication device.
 
-  can_parameter_p parameters;     //!< The CAN configuration parameters.
-  ssize_t num_parameters;         //!< The number of CAN parameters.
+  config_t config;                //!< The CAN configuration parameters.
 
   ssize_t num_references;         //!< Number of references to this device.
-
   ssize_t num_sent;               //!< The number of CAN messages sent.
   ssize_t num_received;           //!< The number of CAN messages read.
 } can_device_t, *can_device_p;
 
-/** \brief Create and initialize CAN device
-  * \param[in] parameters An array of CAN device parameters.
-  * \param[in] num_parameters The number of CAN device parameters.
-  * \return The newly created and initialized CAN device.
+/** \brief Predefined CAN default configuration
   */
-can_device_p can_init(
-  can_parameter_t parameters[],
-  ssize_t num_parameters);
+extern config_t can_default_config;
+
+/** \brief Initialize CAN device
+  * \param[in] dev The CAN device to be initialized.
+  * \param[in] config The optional CAN device configuration parameters.
+  *   Can be null.
+  */
+void can_init(
+  can_device_p dev,
+  config_p config);
+
+/** \brief Initialize CAN device from command line arguments
+  * \param[in] dev The CAN device to be initialized.
+  * \param[in] argc The number of supplied command line arguments.
+  * \param[in] argv The list of supplied command line arguments.
+  */
+void can_init_arg(
+  can_device_p dev,
+  int argc,
+  char **argv);
 
 /** \brief Destroy an existing CAN device
   * \param[in] dev The CAN device to be destroyed.
@@ -87,7 +96,7 @@ void can_destroy(
 
 /** \brief Open CAN communication
   * \note This method is implemented by the CAN communication backend.
-  * \param[in] dev The CAN device to be initialized.
+  * \param[in] dev The initialized CAN device to be opened.
   * \return The resulting error code.
   */
 int can_open(
@@ -95,7 +104,7 @@ int can_open(
 
 /** \brief Close CAN communication
   * \note This method is implemented by the CAN communication backend.
-  * \param[in] dev The CAN device to be closed.
+  * \param[in] dev The opened CAN device to be closed.
   * \return The resulting error code.
   */
 int can_close(

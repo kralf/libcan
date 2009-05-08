@@ -34,8 +34,8 @@
 
 /** \brief Predefined CAN-CPC parameters
   */
-#define CAN_CPC_PARAMETER_DEVICE           0
-#define CAN_CPC_PARAMETER_TIMEOUT          1
+#define CAN_CPC_PARAMETER_DEVICE           "usb-dev"
+#define CAN_CPC_PARAMETER_TIMEOUT          "timeout"
 
 /** \brief Predefined CAN-CPC error codes
   */
@@ -50,10 +50,6 @@
 /** \brief Predefined CAN-CPC error descriptions
   */
 extern const char* can_cpc_errors[];
-
-/** \brief Predefined CAN-CPC parameters
-  */
-extern can_parameter_t can_cpc_default_parameters[];
 
 /** \brief CAN-CPC device structure
   */

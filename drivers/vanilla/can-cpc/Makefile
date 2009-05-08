@@ -1,11 +1,11 @@
-CFLAGS += -I../can -I../cpc-usb -fPIC
-LDFLAGS += -L../can -L../cpc-usb
+CFLAGS += -I../can -I../cpc-usb -I../../../posix/config -fPIC
+LDFLAGS += -L../can -L../../../posix/config -lconfig -L../cpc-usb -lcpc
 
 PREFIX = /usr/local
 
 libcan-cpc.so: ../can/can.h ../can/can.c can_cpc.h can_cpc.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o libcan-cpc.so \
-	../can/can.c can_cpc.c -lcpc
+	../can/can.c can_cpc.c
 	ln -sf $(PWD)/libcan-cpc.so ../can/libcan.so
 
 install: libcan-cpc.so

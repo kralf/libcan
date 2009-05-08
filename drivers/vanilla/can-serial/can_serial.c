@@ -41,13 +41,18 @@ const char* can_serial_errors[] = {
   "CAN serial checksum error",
 };
 
-can_parameter_t can_serial_default_parameters[] = {
-  {"name", "/dev/ttyS0"},
-  {"baudrate", "38400"},
-  {"databits", "8"},
-  {"stopbits", "1"},
-  {"parity", "0"},
-  {"timeout", "0.1"},
+param_t can_serial_default_params[] = {
+  {CAN_SERIAL_PARAMETER_DEVICE, "/dev/ttyS0"},
+  {CAN_SERIAL_PARAMETER_BAUDRATE, "38400"},
+  {CAN_SERIAL_PARAMETER_DATABITS, "8"},
+  {CAN_SERIAL_PARAMETER_STOPBITS, "1"},
+  {CAN_SERIAL_PARAMETER_PARITY, "0"},
+  {CAN_SERIAL_PARAMETER_TIMEOUT, "0.1"},
+};
+
+config_t can_default_config = {
+  can_serial_default_params,
+  sizeof(can_serial_default_params)/sizeof(param_t),
 };
 
 int can_open(can_device_p dev) {
@@ -55,39 +60,21 @@ int can_open(can_device_p dev) {
     dev->comm_dev = malloc(sizeof(serial_device_t));
 
   if (!dev->num_references) {
-    can_parameter_p parameters = malloc(sizeof(can_serial_default_parameters));
-    memcpy(parameters, can_serial_default_parameters,
-      sizeof(can_serial_default_parameters));
-    ssize_t num_parameters = sizeof(can_serial_default_parameters)/
-      sizeof(can_parameter_t);
-
-    int i, j;
-    for (i = 0; i < dev->num_parameters; ++i) {
-      for (j = 0; j < num_parameters; ++j)
-        if (!strcmp(dev->parameters[i].name, parameters[j].name)) {
-        strcpy(parameters[j].value, dev->parameters[i].value);
-        break;
-      }
-    }
-
     dev->num_sent = 0;
-    dev->num_received = 0;
+    dev->num_received = 0;  
 
     if (!serial_open(dev->comm_dev,
-        parameters[CAN_SERIAL_PARAMETER_DEVICE].value) &&
+        config_get_string(&dev->config, CAN_SERIAL_PARAMETER_DEVICE)) &&
       !serial_setup(dev->comm_dev,
-        atoi(parameters[CAN_SERIAL_PARAMETER_BAUDRATE].value),
-        atoi(parameters[CAN_SERIAL_PARAMETER_DATABITS].value),
-        atoi(parameters[CAN_SERIAL_PARAMETER_STOPBITS].value),
-        atoi(parameters[CAN_SERIAL_PARAMETER_PARITY].value),
-        atof(parameters[CAN_SERIAL_PARAMETER_TIMEOUT].value))) {
-      free(parameters);
+        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_BAUDRATE),
+        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_DATABITS),
+        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_STOPBITS),
+        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_PARITY),
+        config_get_float(&dev->config, CAN_SERIAL_PARAMETER_TIMEOUT))) {
       ++dev->num_references;
-
       return CAN_ERROR_NONE;
     }
     else {
-      free(parameters);
       free(dev->comm_dev);
       dev->comm_dev = 0;
 

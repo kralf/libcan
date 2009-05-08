@@ -41,12 +41,12 @@
 
 /** \brief Predefined CAN serial parameters
   */
-#define CAN_SERIAL_PARAMETER_DEVICE           0
-#define CAN_SERIAL_PARAMETER_BAUDRATE         1
-#define CAN_SERIAL_PARAMETER_DATABITS         2
-#define CAN_SERIAL_PARAMETER_STOPBITS         3
-#define CAN_SERIAL_PARAMETER_PARITY           4
-#define CAN_SERIAL_PARAMETER_TIMEOUT          5
+#define CAN_SERIAL_PARAMETER_DEVICE           "serial-dev"
+#define CAN_SERIAL_PARAMETER_BAUDRATE         "serial-baudrate"
+#define CAN_SERIAL_PARAMETER_DATABITS         "serial-databits"
+#define CAN_SERIAL_PARAMETER_STOPBITS         "serial-stopbits"
+#define CAN_SERIAL_PARAMETER_PARITY           "serial-parity"
+#define CAN_SERIAL_PARAMETER_TIMEOUT          "timeout"
 
 /** \brief Predefined CAN serial error codes
   */
@@ -63,10 +63,6 @@
 /** \brief Predefined CAN serial error descriptions
   */
 extern const char* can_serial_errors[];
-
-/** \brief Predefined CAN serial parameters
-  */
-extern can_parameter_t can_serial_default_parameters[];
 
 /** Convert an EPOS message into serial data.
   *	\note	This conversion is necessary to make EPOS messages compliant

@@ -44,9 +44,14 @@ const char* can_cpc_errors[] = {
   "error receiving from CAN-CPC device",
 };
 
-can_parameter_t can_cpc_default_parameters[] = {
-  {"name", "/dev/cpc_usb0"},
-  {"timeout", "0.01"},
+param_t can_cpc_default_parameters[] = {
+  {CAN_CPC_PARAMETER_DEVICE, "/dev/cpc_usb0"},
+  {CAN_CPC_PARAMETER_TIMEOUT, "0.01"},
+};
+
+config_t can_default_config = {
+  can_cpc_default_parameters,
+  sizeof(can_cpc_default_parameters)/sizeof(param_t),
 };
 
 void can_cpc_handle(int handle, const CPC_MSG_T* msg, void* custom);
@@ -56,35 +61,18 @@ int can_open(can_device_p dev) {
     dev->comm_dev = malloc(sizeof(can_cpc_device_t));
 
   if (!dev->num_references) {
-    can_parameter_p parameters = malloc(sizeof(can_cpc_default_parameters));
-    memcpy(parameters, can_cpc_default_parameters,
-      sizeof(can_cpc_default_parameters));
-    ssize_t num_parameters = sizeof(can_cpc_default_parameters)/
-      sizeof(can_parameter_t);
-
-    int i, j;
-    for (i = 0; i < dev->num_parameters; ++i) {
-      for (j = 0; j < num_parameters; ++j)
-        if (!strcmp(dev->parameters[i].name, parameters[j].name)) {
-        strcpy(parameters[j].value, dev->parameters[i].value);
-        break;
-      }
-    }
-
     dev->num_sent = 0;
     dev->num_received = 0;
 
     if (!can_cpc_open(dev->comm_dev,
-        parameters[CAN_CPC_PARAMETER_DEVICE].value) &&
+        config_get_string(&dev->config, CAN_CPC_PARAMETER_DEVICE)) &&
       !can_cpc_setup(dev->comm_dev,
-        atof(parameters[CAN_CPC_PARAMETER_TIMEOUT].value))) {
-      free(parameters);
+        config_get_float(&dev->config, CAN_CPC_PARAMETER_TIMEOUT))) {
       ++dev->num_references;
 
       return CAN_ERROR_NONE;
     }
     else {
-      free(parameters);
       free(dev->comm_dev);
       dev->comm_dev = 0;
 

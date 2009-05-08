@@ -31,23 +31,25 @@ const char* can_errors[] = {
   "error receiving CAN message",
 };
 
-can_device_p can_init(can_parameter_t parameters[], ssize_t num_parameters) {
-  can_device_p dev = malloc(sizeof(can_device_t));
-  memset(dev, 0, sizeof(can_device_t));
+void can_init(can_device_p dev, config_p config) {
+  dev->comm_dev = 0;
 
-  if (num_parameters) {
-    dev->parameters = malloc(num_parameters*sizeof(can_parameter_t));
-    memcpy(dev->parameters, parameters, num_parameters*
-      sizeof(can_parameter_t));
-    dev->num_parameters = num_parameters;
-  }
+  config_init_default(&dev->config, &can_default_config);
+  if (config)
+    config_set(&dev->config, config);
 
-  return dev;
+  dev->num_references = 0;
+  dev->num_sent = 0;
+  dev->num_received = 0;
+}
+
+void can_init_arg(can_device_p dev, int argc, char **argv) {
+  config_t config;
+  config_init_arg(&config, argc, argv, CAN_CONFIG_ARG_PREFIX);
+
+  can_init(dev, &config);
 }
 
 void can_destroy(can_device_p dev) {
-  if (dev->parameters)
-    free(dev->parameters);
-
-  free(dev);
+  config_destroy(&dev->config);
 }

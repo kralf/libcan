@@ -1,5 +1,7 @@
-CFLAGS += -I../can -I../epos -I../../../posix/serial -fPIC
-LDFLAGS += -L../can -L../epos -L../../../posix/serial -lserial
+CFLAGS += -I../can -I../epos -I../../../posix/config -I../../../posix/serial \
+	-fPIC
+LDFLAGS += -L../can -L../epos -L../../../posix/config -lconfig \
+	-L../../../posix/serial -lserial
 
 PREFIX = /usr/local
 
