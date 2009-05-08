@@ -48,6 +48,8 @@ void can_init_arg(can_device_p dev, int argc, char **argv) {
   config_init_arg(&config, argc, argv, CAN_CONFIG_ARG_PREFIX);
 
   can_init(dev, &config);
+
+  config_destroy(&config);
 }
 
 void can_destroy(can_device_p dev) {
