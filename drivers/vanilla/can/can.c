@@ -43,9 +43,11 @@ void can_init(can_device_p dev, config_p config) {
   dev->num_received = 0;
 }
 
-void can_init_arg(can_device_p dev, int argc, char **argv) {
+void can_init_arg(can_device_p dev, int argc, char **argv, const char* 
+  prefix) {
   config_t config;
-  config_init_arg(&config, argc, argv, CAN_CONFIG_ARG_PREFIX);
+  config_init_arg(&config, argc, argv, (prefix) ? prefix : 
+    CAN_CONFIG_ARG_PREFIX);
 
   can_init(dev, &config);
 

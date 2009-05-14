@@ -64,21 +64,19 @@ int can_open(can_device_p dev) {
     dev->num_sent = 0;
     dev->num_received = 0;
 
-    if (!can_cpc_open(dev->comm_dev,
-        config_get_string(&dev->config, CAN_CPC_PARAMETER_DEVICE)) &&
-      !can_cpc_setup(dev->comm_dev,
+    if (can_cpc_open(dev->comm_dev,
+        config_get_string(&dev->config, CAN_CPC_PARAMETER_DEVICE)) ||
+      can_cpc_setup(dev->comm_dev,
         config_get_float(&dev->config, CAN_CPC_PARAMETER_TIMEOUT))) {
-      ++dev->num_references;
-
-      return CAN_ERROR_NONE;
-    }
-    else {
       free(dev->comm_dev);
       dev->comm_dev = 0;
 
       return CAN_ERROR_OPEN;
     }
   }
+  ++dev->num_references;
+
+  return CAN_ERROR_NONE;
 }
 
 int can_close(can_device_p dev) {
