@@ -29,8 +29,7 @@
   *  CAN-CPC hardware.
   */
 
-#include <can.h>
-#include <cpc.h>
+#include "can.h"
 
 /** \brief Predefined CAN-CPC parameters
   */

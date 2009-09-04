@@ -30,7 +30,8 @@
 #include <signal.h>
 #include <termios.h>
 
-#include <cpclib.h>
+#include <libcpc/cpc.h>
+#include <libcpc/cpclib.h>
 
 #include "can_cpc.h"
 

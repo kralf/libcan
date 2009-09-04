@@ -27,7 +27,7 @@
   * These methods are implemented by all CAN communication backends.
   */
 
-#include <config.h>
+#include "config.h"
 
 /** \brief Predefined CAN constants
   */
