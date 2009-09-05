@@ -5,6 +5,6 @@ remake_find_library(
 
 remake_add_library(
   can PREFIX OFF
-  LINK ${TULIBS_LIBRARY}
+  LINK ${TULIBS_CONFIG_LIBRARY}
 )
 remake_add_headers()

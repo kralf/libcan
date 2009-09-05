@@ -9,6 +9,6 @@ remake_include(
 )
 remake_add_library(
   serial
-  LINK can ${TULIBS_LIBRARY}
+  LINK can ${TULIBS_SERIAL_LIBRARY}
 )
 remake_add_headers()

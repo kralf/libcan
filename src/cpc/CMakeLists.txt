@@ -9,6 +9,6 @@ remake_include(
 )
 remake_add_library(
   cpc
-  LINK can ${LIBCPC_LIBRARY}
+  LINK can ${CPC_LIBRARY}
 )
 remake_add_headers()
