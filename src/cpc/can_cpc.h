@@ -31,12 +31,12 @@
 
 #include "can.h"
 
-/** \brief Predefined CAN-CPC parameters
+/** Predefined CAN-CPC parameters
   */
 #define CAN_CPC_PARAMETER_DEVICE           "usb-dev"
 #define CAN_CPC_PARAMETER_TIMEOUT          "timeout"
 
-/** \brief Predefined CAN-CPC error codes
+/** Predefined CAN-CPC error codes
   */
 #define CAN_CPC_ERROR_NONE                 0
 #define CAN_CPC_ERROR_OPEN                 1

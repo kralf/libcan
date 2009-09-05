@@ -38,7 +38,7 @@
 #define CAN_SERIAL_FAILED		                  0x46
 #define CAN_SERIAL_RESPONSE	                  0x00
 
-/** \brief Predefined CAN serial constants
+/** Predefined CAN serial constants
   */
 
 #define CAN_SERIAL_SEND_ID                    0x0600
@@ -54,7 +54,7 @@
 
 #define CAN_SERIAL_ABORT                      0xC0
 
-/** \brief Predefined CAN serial parameters
+/** Predefined CAN serial parameters
   */
 #define CAN_SERIAL_PARAMETER_DEVICE           "serial-dev"
 #define CAN_SERIAL_PARAMETER_BAUDRATE         "serial-baudrate"
@@ -63,7 +63,7 @@
 #define CAN_SERIAL_PARAMETER_PARITY           "serial-parity"
 #define CAN_SERIAL_PARAMETER_TIMEOUT          "timeout"
 
-/** \brief Predefined CAN serial error codes
+/** Predefined CAN serial error codes
   */
 #define CAN_SERIAL_ERROR_NONE                 0
 #define CAN_SERIAL_ERROR_CONVERT              1

@@ -29,11 +29,11 @@
 
 #include <tulibs/config.h>
 
-/** \brief Predefined CAN constants
+/** Predefined CAN constants
   */
 #define CAN_CONFIG_ARG_PREFIX               "--can-"
 
-/** \brief Predefined CAN error codes
+/** Predefined CAN error codes
   */
 #define CAN_ERROR_NONE                      0
 #define CAN_ERROR_OPEN                      1
