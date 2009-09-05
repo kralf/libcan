@@ -25,7 +25,7 @@
 #include <termios.h>
 #include <fcntl.h>
 
-#include <epos.h>
+#include <tulibs/serial.h>
 
 #include "can_serial.h"
 
@@ -129,7 +129,7 @@ int can_receive_message(can_device_p dev, can_message_p message) {
 int can_serial_from_epos(can_device_p dev, can_message_p message,
   unsigned char* data) {
 	switch (message->content[0]) {
-		case EPOS_DEVICE_WRITE_SEND_1_BYTE:
+		case CAN_SERIAL_WRITE_SEND_1_BYTE:
       data[0] = CAN_SERIAL_OPCODE_WRITE;
       data[1] = 0x02;
       data[2] = message->content[2];
@@ -141,7 +141,7 @@ int can_serial_from_epos(can_device_p dev, can_message_p message,
       data[8] = 0x00;
       data[9] = 0x00;
       return 10;
-		case EPOS_DEVICE_WRITE_SEND_2_BYTE:
+		case CAN_SERIAL_WRITE_SEND_2_BYTE:
       data[0] = CAN_SERIAL_OPCODE_WRITE;
       data[1] = 0x02;
       data[2] = message->content[2];
@@ -153,7 +153,7 @@ int can_serial_from_epos(can_device_p dev, can_message_p message,
       data[8] = 0x00;
       data[9] = 0x00;
       return 10;
-		case EPOS_DEVICE_WRITE_SEND_4_BYTE:
+		case CAN_SERIAL_WRITE_SEND_4_BYTE:
       data[0] = CAN_SERIAL_OPCODE_WRITE;
       data[1] = 0x03;
       data[2] = message->content[2];
@@ -167,7 +167,7 @@ int can_serial_from_epos(can_device_p dev, can_message_p message,
       data[10] = 0x00;
       data[11] = 0x00;
       return 12;
-		case EPOS_DEVICE_READ_SEND:
+		case CAN_SERIAL_READ_SEND:
       data[0] = CAN_SERIAL_OPCODE_READ;
       data[1] = 0x01;
       data[2] = message->content[2];
@@ -188,17 +188,17 @@ int can_serial_to_epos(can_device_p dev, unsigned char* data, can_message_p
 
 	if ((data[2] == 0) && (data[3] == 0) && (data[4] == 0) && (data[5] == 0)) {
     switch (message->content[0]) {
-      case EPOS_DEVICE_WRITE_SEND_1_BYTE:
-        message->content[0] = EPOS_DEVICE_WRITE_RECEIVE;
+      case CAN_SERIAL_WRITE_SEND_1_BYTE:
+        message->content[0] = CAN_SERIAL_WRITE_RECEIVE;
         break;
-      case EPOS_DEVICE_WRITE_SEND_2_BYTE:
-        message->content[0] = EPOS_DEVICE_WRITE_RECEIVE;
+      case CAN_SERIAL_WRITE_SEND_2_BYTE:
+        message->content[0] = CAN_SERIAL_WRITE_RECEIVE;
         break;
-      case EPOS_DEVICE_WRITE_SEND_4_BYTE:
-        message->content[0] = EPOS_DEVICE_WRITE_RECEIVE;
+      case CAN_SERIAL_WRITE_SEND_4_BYTE:
+        message->content[0] = CAN_SERIAL_WRITE_RECEIVE;
         break;
-      case EPOS_DEVICE_READ_SEND:
-        message->content[0] = EPOS_DEVICE_READ_RECEIVE_UNDEFINED;
+      case CAN_SERIAL_READ_SEND:
+        message->content[0] = CAN_SERIAL_READ_RECEIVE_UNDEFINED;
         break;
       default:
         return -CAN_SERIAL_ERROR_CONVERT;
@@ -213,10 +213,10 @@ int can_serial_to_epos(can_device_p dev, unsigned char* data, can_message_p
 		message->content[4] = data[9];
 	}
 	else {
-    message->id -= EPOS_DEVICE_SEND_ID;
-    message->id += EPOS_DEVICE_RECEIVE_ID;
+    message->id -= CAN_SERIAL_SEND_ID;
+    message->id += CAN_SERIAL_RECEIVE_ID;
 
-    message->content[0] = EPOS_DEVICE_ABORT;
+    message->content[0] = CAN_SERIAL_ABORT;
     message->content[1] = message->content[2];
     message->content[2] = message->content[3];
     message->content[3] = message->content[4];

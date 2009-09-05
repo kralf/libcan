@@ -1,6 +1,6 @@
 remake_find_library(
-  cpc cpc.h
-  PACKAGE libcpc
+  tulibs-serial serial.h
+  PACKAGE tulibs
 )
 
 remake_include(
@@ -8,7 +8,7 @@ remake_include(
   ../can
 )
 remake_add_library(
-  cpc
-  LINK can ${LIBCPC_LIBRARY}
+  serial
+  LINK can ${TULIBS_LIBRARY}
 )
 remake_add_headers()

@@ -29,8 +29,7 @@
   *  controllers over a RS232 serial connection.
   */
 
-#include <can.h>
-#include <serial.h>
+#include "can.h"
 
 #define CAN_SERIAL_OPCODE_READ                0x10
 #define CAN_SERIAL_OPCODE_WRITE               0x11
@@ -38,6 +37,22 @@
 #define CAN_SERIAL_OKAY 		                  0x4F
 #define CAN_SERIAL_FAILED		                  0x46
 #define CAN_SERIAL_RESPONSE	                  0x00
+
+/** \brief Predefined CAN serial constants
+  */
+
+#define CAN_SERIAL_SEND_ID                    0x0600
+#define CAN_SERIAL_RECEIVE_ID                 0x0580
+
+#define CAN_SERIAL_WRITE_SEND_1_BYTE          0x2F
+#define CAN_SERIAL_WRITE_SEND_2_BYTE          0x2B
+#define CAN_SERIAL_WRITE_SEND_4_BYTE          0x23
+#define CAN_SERIAL_WRITE_RECEIVE              0x60
+
+#define CAN_SERIAL_READ_RECEIVE_UNDEFINED     0x42
+#define CAN_SERIAL_READ_SEND                  0x40
+
+#define CAN_SERIAL_ABORT                      0xC0
 
 /** \brief Predefined CAN serial parameters
   */
