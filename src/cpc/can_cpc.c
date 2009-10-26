@@ -47,6 +47,9 @@ const char* can_cpc_errors[] = {
 
 param_t can_cpc_default_parameters[] = {
   {CAN_CPC_PARAMETER_DEVICE, "/dev/cpc_usb0"},
+  {CAN_CPC_PARAMETER_BITRATE, "1000.0"},
+  {CAN_CPC_PARAMETER_QUANTA_PER_BIT, "8"},
+  {CAN_CPC_PARAMETER_SAMPLING_POINT, "0.75"},
   {CAN_CPC_PARAMETER_TIMEOUT, "0.01"},
 };
 
@@ -68,6 +71,9 @@ int can_open(can_device_p dev) {
     if (can_cpc_open(dev->comm_dev,
         config_get_string(&dev->config, CAN_CPC_PARAMETER_DEVICE)) ||
       can_cpc_setup(dev->comm_dev,
+        config_get_int(&dev->config, CAN_CPC_PARAMETER_BITRATE),
+        config_get_int(&dev->config, CAN_CPC_PARAMETER_QUANTA_PER_BIT),
+        config_get_float(&dev->config, CAN_CPC_PARAMETER_SAMPLING_POINT),
         config_get_float(&dev->config, CAN_CPC_PARAMETER_TIMEOUT))) {
       free(dev->comm_dev);
       dev->comm_dev = 0;
@@ -145,13 +151,21 @@ int can_cpc_close(can_cpc_device_p dev) {
   return CAN_CPC_ERROR_NONE;
 }
 
-int can_cpc_setup(can_cpc_device_p dev, double timeout) {
+int can_cpc_setup(can_cpc_device_p dev, int bitrate, int quanta_per_bit,
+  double sampling_point, double timeout) {
   CPC_INIT_PARAMS_T* parameters;
+
+  double t = 1.0/(8*bitrate*1e3);
+  int brp = t*CAN_CPC_CLOCK_FREQUENCY/(quanta_per_bit/4);
+  int tseg1 = quanta_per_bit*sampling_point;
+  int tseg2 = quanta_per_bit-tseg1;
 
   parameters = CPC_GetInitParamsPtr(dev->handle);
   parameters->canparams.cc_type = SJA1000;
-  parameters->canparams.cc_params.sja1000.btr0 = 0x00;
-  parameters->canparams.cc_params.sja1000.btr1 = 0x14;
+  parameters->canparams.cc_params.sja1000.btr0 =
+    ((CAN_CPC_SYNC_JUMP_WIDTH-1) << 6)+(brp-1);
+  parameters->canparams.cc_params.sja1000.btr1 =
+    (CAN_CPC_TRIPLE_SAMPLING << 7)+((tseg2-1) << 4)+(tseg1-2);
   parameters->canparams.cc_params.sja1000.outp_contr = 0xda;
   parameters->canparams.cc_params.sja1000.acc_code0 = 0xff;
   parameters->canparams.cc_params.sja1000.acc_code1 = 0xff;
@@ -166,7 +180,11 @@ int can_cpc_setup(can_cpc_device_p dev, double timeout) {
     return CAN_CPC_ERROR_SETUP;
 
   dev->fd = CPC_GetFdByHandle(dev->handle);
-  dev->timeout = timeout;  
+
+  dev->bitrate = bitrate;
+  dev->quanta_per_bit = quanta_per_bit;
+  dev->sampling_point = sampling_point;
+  dev->timeout = timeout;
 
   if (CPC_Control(dev->handle, CONTR_CAN_Message | CONTR_CONT_ON))
     return CAN_CPC_ERROR_SETUP;
