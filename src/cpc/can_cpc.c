@@ -47,7 +47,7 @@ const char* can_cpc_errors[] = {
 
 param_t can_cpc_default_parameters[] = {
   {CAN_CPC_PARAMETER_DEVICE, "/dev/cpc_usb0"},
-  {CAN_CPC_PARAMETER_BITRATE, "1000.0"},
+  {CAN_CPC_PARAMETER_BITRATE, "1000"},
   {CAN_CPC_PARAMETER_QUANTA_PER_BIT, "8"},
   {CAN_CPC_PARAMETER_SAMPLING_POINT, "0.75"},
   {CAN_CPC_PARAMETER_TIMEOUT, "0.01"},
@@ -156,8 +156,8 @@ int can_cpc_setup(can_cpc_device_p dev, int bitrate, int quanta_per_bit,
   CPC_INIT_PARAMS_T* parameters;
 
   double t = 1.0/(8*bitrate*1e3);
-  int brp = t*CAN_CPC_CLOCK_FREQUENCY/(quanta_per_bit/4);
-  int tseg1 = quanta_per_bit*sampling_point;
+  int brp = round(4*t*CAN_CPC_CLOCK_FREQUENCY/quanta_per_bit);
+  int tseg1 = round(quanta_per_bit*sampling_point);
   int tseg2 = quanta_per_bit-tseg1;
 
   parameters = CPC_GetInitParamsPtr(dev->handle);
