@@ -156,8 +156,8 @@ int can_cpc_setup(can_cpc_device_p dev, int bitrate, int quanta_per_bit,
   CPC_INIT_PARAMS_T* parameters;
 
   double t = 1.0/(8*bitrate*1e3);
-  int brp = round(4*t*CAN_CPC_CLOCK_FREQUENCY/quanta_per_bit);
-  int tseg1 = round(quanta_per_bit*sampling_point);
+  int brp = fround(4*t*CAN_CPC_CLOCK_FREQUENCY/quanta_per_bit);
+  int tseg1 = fround(quanta_per_bit*sampling_point);
   int tseg2 = quanta_per_bit-tseg1;
 
   parameters = CPC_GetInitParamsPtr(dev->handle);
@@ -199,8 +199,8 @@ int can_cpc_send(can_cpc_device_p dev, can_message_p message) {
   int i, error;
 
   msg.id = message->id;
-  msg.length = sizeof(message->content);
-  memcpy(msg.msg, message->content, msg.length);
+  msg.length = message->length;
+  memcpy(msg.msg, message->content, message->length);
 
   time.tv_sec = 0;
   time.tv_usec = dev->timeout*1e6;
@@ -249,8 +249,10 @@ void can_cpc_handle(int handle, const CPC_MSG_T* msg, void* custom) {
   can_cpc_device_p dev = custom;
 
   dev->msg_received.id = msg->msg.canmsg.id;
+
   memcpy(dev->msg_received.content, msg->msg.canmsg.msg,
     msg->msg.canmsg.length);
+  dev->msg_received.length = msg->msg.canmsg.length;
 
   ++dev->num_received;
 }

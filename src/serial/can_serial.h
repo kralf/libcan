@@ -80,7 +80,7 @@
 extern const char* can_serial_errors[];
 
 /** Convert an EPOS message into serial data.
-  *	\note	This conversion is necessary to make EPOS messages compliant
+  * \note This conversion is necessary to make EPOS messages compliant
   *   with the CAN protocol.
   * \param[in] dev The sending CAN device for which to convert the message.
   * \param[in] message The CAN message to be converted.
@@ -94,7 +94,7 @@ int can_serial_from_epos(
   unsigned char* data);
 
 /** Convert serial data to an EPOS message.
-  *	\note This conversion is necessary in order to provide CAN protocol
+  * \note This conversion is necessary in order to provide CAN protocol
   *   messages to libepos.
   * \param[in] dev The receiving CAN device for which to convert the message.
   * \param[in] data An array containing the data frame sent to EPOS.
@@ -130,10 +130,10 @@ int can_serial_receive(
 
 /** Change the order of bytes in the data frame. The first two characters
   * will be ignored, the following characters will be reordered.
-  *	\note This is necessary according to the EPOS Communication guide.
+  * \note This is necessary according to the EPOS Communication guide.
   * \param[in,out] data An array of bytes for which to change the order.
   * \param[in] num The number of bytes in the array.
-  *	\return	The number of reordered bytes within the data frame.
+  * \return The number of reordered bytes within the data frame.
   */
 ssize_t can_serial_change_byte_order(
   unsigned char* data,
@@ -151,13 +151,13 @@ ssize_t can_serial_change_word_order(
   ssize_t num);
 
 /** Calculate a 16-bit CRC checksum using CRC-CCITT algorithm.
-  *	\note Calculation has to include all bytes in the data frame. Internally,
+  * \note Calculation has to include all bytes in the data frame. Internally,
   *   the array is transformed to an array of words in order to calculate the
   *   CRC. The CRC word is then tranformed back to an array of characters.
   * \param[in] data An array of bytes representing the data frame.
   * \param[in] num The number of bytes in the data frame.
   * \param[out] crc_value An array of two bytes to store the CRC-word.
-  *	\return	The number of words built from the array.
+  * \return The number of words built from the array.
   */
 ssize_t can_serial_calc_crc(
   unsigned char* data,
@@ -167,7 +167,7 @@ ssize_t can_serial_calc_crc(
 /** Implementation of the CRC-CCITT algorithm.
   * \param[in] data An array of words containing the data frame.
   * \param[in] num The number of words in the data frame.
-  *	\return	The calculated CRC-value.
+  * \return The calculated CRC-value.
   */
 unsigned short can_serial_crc_alg(
   unsigned short* data,

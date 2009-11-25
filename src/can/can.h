@@ -50,7 +50,9 @@ extern const char* can_errors[];
   */
 typedef struct can_message_t {
   int id;                         //!< The CAN message identifier.
+
   unsigned char content[8];       //!< The actual CAN message content.
+  ssize_t length;                 //!< The length of the CAN message.
 } can_message_t, *can_message_p;
 
 /** \brief Structure defining a CAN device
