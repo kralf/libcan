@@ -18,6 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#define _ISOC99_SOURCE
+
 #include <sys/types.h>
 #include <sys/dir.h>
 #include <stdio.h>
@@ -29,6 +31,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <termios.h>
+#include <math.h>
 
 #include <libcpc/cpc.h>
 #include <libcpc/cpclib.h>
@@ -156,8 +159,8 @@ int can_cpc_setup(can_cpc_device_p dev, int bitrate, int quanta_per_bit,
   CPC_INIT_PARAMS_T* parameters;
 
   double t = 1.0/(8*bitrate*1e3);
-  int brp = fround(4*t*CAN_CPC_CLOCK_FREQUENCY/quanta_per_bit);
-  int tseg1 = fround(quanta_per_bit*sampling_point);
+  int brp = round(4*t*CAN_CPC_CLOCK_FREQUENCY/quanta_per_bit);
+  int tseg1 = round(quanta_per_bit*sampling_point);
   int tseg2 = quanta_per_bit-tseg1;
 
   parameters = CPC_GetInitParamsPtr(dev->handle);
