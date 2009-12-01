@@ -21,5 +21,5 @@ remake_doc(
 )
 
 remake_pack_deb(tulibs)
-remake_pack_deb(COMPONENT dev tulibs-dev)
+remake_pack_deb(COMPONENT dev libcan tulibs-dev)
 remake_pack_deb(ARCH all COMPONENT doc)
