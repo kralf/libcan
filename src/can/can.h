@@ -31,7 +31,7 @@
 
 /** Predefined CAN constants
   */
-#define CAN_CONFIG_ARG_PREFIX               "--can-"
+#define CAN_CONFIG_ARG_PREFIX               "can"
 
 /** Predefined CAN error codes
   */
