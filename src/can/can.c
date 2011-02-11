@@ -43,15 +43,21 @@ void can_init(can_device_p dev, config_p config) {
   dev->num_received = 0;
 }
 
-void can_init_arg(can_device_p dev, int argc, char **argv, const char* 
-  prefix) {
+int can_init_arg(can_device_p dev, int argc, char **argv, const char*
+    prefix, const char* args) {
   config_t config;
-  config_init_arg(&config, argc, argv, (prefix) ? prefix : 
-    CAN_CONFIG_ARG_PREFIX);
+  int result;
 
-  can_init(dev, &config);
+  if (result = config_init_arg(&config, argc, argv, (prefix) ? prefix :
+      CAN_CONFIG_ARG_PREFIX, args)) {
+    config_print_usage(stdout, argv[0], args, result);
+    config_print_help(stdout, &can_default_config, CAN_CONFIG_ARG_PREFIX);
+  }
+  else
+    can_init(dev, &config);
 
   config_destroy(&config);
+  return result;
 }
 
 void can_destroy(can_device_p dev) {

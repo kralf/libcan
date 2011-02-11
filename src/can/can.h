@@ -85,12 +85,15 @@ void can_init(
   * \param[in] argc The number of supplied command line arguments.
   * \param[in] argv The list of supplied command line arguments.
   * \param[in] prefix An optional argument prefix.
+  * \param[in] args An optional string naming the expected arguments.
+  * \return The resulting configuration error code.
   */
-void can_init_arg(
+int can_init_arg(
   can_device_p dev,
   int argc,
   char **argv,
-  const char* prefix);
+  const char* prefix,
+  const char* args);
 
 /** \brief Destroy an existing CAN device
   * \param[in] dev The CAN device to be destroyed.
