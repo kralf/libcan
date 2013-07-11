@@ -20,12 +20,12 @@ remake_doc(
 )
 
 remake_pack_deb(
-  DEPENDS tulibs
+  DEPENDS tulibs libcpc
 )
 remake_pack_deb(
   COMPONENT dev
   DESCRIPTION "development headers"
-  DEPENDS libcan tulibs-dev
+  DEPENDS libcan tulibs-dev libcpc-dev
 )
 remake_pack_deb(
   ARCH all
@@ -37,13 +37,13 @@ remake_distribute_deb(
   DISTRIBUTION lucid
   SECTION libs
   UPLOAD ppa:kralf/asl
-  DEPENDS remake
+  DEPENDS tulibs-dev libcpc-dev remake
   PASS CMAKE_BUILD_TYPE LIBCAN_GIT_REVISION
 )
 remake_distribute_deb(
   DISTRIBUTION precise
   SECTION libs
   UPLOAD ppa:kralf/asl
-  DEPENDS remake
+  DEPENDS tulibs-dev libcpc-dev remake
   PASS CMAKE_BUILD_TYPE LIBCAN_GIT_REVISION
 )
