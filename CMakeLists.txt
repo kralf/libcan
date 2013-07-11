@@ -20,15 +20,30 @@ remake_doc(
 )
 
 remake_pack_deb(
-  tulibs
+  DEPENDS tulibs
 )
 remake_pack_deb(
   COMPONENT dev
   DESCRIPTION "development headers"
-  libcan tulibs-dev
+  DEPENDS libcan tulibs-dev
 )
 remake_pack_deb(
   ARCH all
   COMPONENT doc
   DESCRIPTION "documentation"
+)
+
+remake_distribute_deb(
+  DISTRIBUTION lucid
+  SECTION libs
+  UPLOAD ppa:kralf/asl
+  DEPENDS remake
+  PASS CMAKE_BUILD_TYPE LIBCAN_GIT_REVISION
+)
+remake_distribute_deb(
+  DISTRIBUTION precise
+  SECTION libs
+  UPLOAD ppa:kralf/asl
+  DEPENDS remake
+  PASS CMAKE_BUILD_TYPE LIBCAN_GIT_REVISION
 )

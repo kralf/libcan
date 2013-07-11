@@ -1,3 +1,9 @@
+libcan (0.1-39) unstable; urgency=low
+
+  * Lucid and precise distributions
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Thu, 11 Jul 2013 11:16:00 +0100
+
 libcan (0.1-38) unstable; urgency=low
 
   * Added SVN changelog
