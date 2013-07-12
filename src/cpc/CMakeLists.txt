@@ -5,6 +5,6 @@ remake_find_library(
 
 remake_add_library(
   cpc
-  LINK interface ${CPC_LIBRARY}
+  FORCE_LINK interface ${CPC_LIBRARY}
 )
 remake_add_headers()

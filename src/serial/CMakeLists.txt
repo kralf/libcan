@@ -5,6 +5,6 @@ remake_find_library(
 
 remake_add_library(
   serial
-  LINK interface ${TULIBS_SERIAL_LIBRARY}
+  FORCE_LINK interface ${TULIBS_SERIAL_LIBRARY}
 )
 remake_add_headers()

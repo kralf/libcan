@@ -1,3 +1,9 @@
+libcan (0.1-44) unstable; urgency=low
+
+  * Forcing linkage to libcan-interface
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Fri, 12 Jul 2013 14:19:00 +0100
+
 libcan (0.1-43) unstable; urgency=low
 
   * Changed project home to github
