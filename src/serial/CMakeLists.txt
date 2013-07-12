@@ -5,6 +5,6 @@ remake_find_library(
 
 remake_add_library(
   serial
-  FORCE_LINK interface ${TULIBS_SERIAL_LIBRARY}
+  FORCE_LINK interface ${TULIBS_SERIAL_LIBRARY} "-Wl,-soname=libcan.so"
 )
 remake_add_headers()

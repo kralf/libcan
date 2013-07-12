@@ -5,6 +5,6 @@ remake_find_library(
 
 remake_add_library(
   cpc
-  FORCE_LINK interface ${CPC_LIBRARY}
+  FORCE_LINK interface ${CPC_LIBRARY} "-Wl,-soname=libcan.so"
 )
 remake_add_headers()
