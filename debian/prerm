@@ -1,0 +1,13 @@
+#!/bin/sh -e
+# postrm for libcan
+
+action="$1"
+
+if [ "$action" != "upgrade" ]
+then
+  update-alternatives --remove libcan.so /usr/lib/libcan-serial.so
+  update-alternatives --remove libcan.so /usr/lib/libcan-cpc.so
+fi
+
+
+exit 0

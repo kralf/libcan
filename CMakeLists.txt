@@ -21,6 +21,7 @@ remake_doc(
 
 remake_pack_deb(
   DEPENDS tulibs libcpc
+  EXTRA debian/*
 )
 remake_pack_deb(
   COMPONENT dev

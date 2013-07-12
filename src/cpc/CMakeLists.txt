@@ -3,12 +3,8 @@ remake_find_library(
   PACKAGE libcpc
 )
 
-remake_include(
-  ../config
-  ../can
-)
 remake_add_library(
   cpc
-  LINK can ${CPC_LIBRARY}
+  LINK interface ${CPC_LIBRARY}
 )
 remake_add_headers()

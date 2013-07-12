@@ -1,0 +1,16 @@
+#!/bin/sh -e
+# postinst for libcan
+
+action="$1"
+oldversion="$2"
+
+update-alternatives --install /usr/lib/libcan.so libcan.so /usr/lib/libcan-serial.so 10
+update-alternatives --install /usr/lib/libcan.so libcan.so /usr/lib/libcan-cpc.so 5
+
+if [ "$action" != configure ]; then
+  exit 0
+fi
+
+ldconfig
+
+exit 0

@@ -4,7 +4,7 @@ remake_find_library(
 )
 
 remake_add_library(
-  can PREFIX OFF
+  interface
   LINK ${TULIBS_CONFIG_LIBRARY}
 )
 remake_add_headers()
