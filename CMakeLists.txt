@@ -9,7 +9,7 @@ remake_project(
   SUMMARY "A simple, unified CAN communication library."
   AUTHOR "Ralf Kaestner"
   CONTACT "ralf.kaestner@gmail.com"
-  HOME "http://aslforge.ethz.ch/projects/libcan"
+  HOME "http://github.com/kralf/libcan"
   LICENSE "GNU Lesser General Public License (LGPL)"
   PREFIX can-
   INSTALL /usr

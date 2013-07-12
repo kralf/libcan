@@ -1,3 +1,9 @@
+libcan (0.1-43) unstable; urgency=low
+
+  * Changed project home to github
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Fri, 12 Jul 2013 13:57:00 +0100
+
 libcan (0.1-42) unstable; urgency=low
 
   * Renamed libcan into libcan-interface for alternative configuration
