@@ -1,3 +1,9 @@
+libcan (0.1-48) unstable; urgency=low
+
+  * Added pkg-config dependency on tulibs
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Fri, 26 Jul 2013 09:23:00 +0100
+
 libcan (0.1-47) unstable; urgency=low
 
   * Added missing pkg-config build dependency
