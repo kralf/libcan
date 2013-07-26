@@ -1,3 +1,9 @@
+libcan (0.1-47) unstable; urgency=low
+
+  * Added missing pkg-config build dependency
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Fri, 26 Jul 2013 09:19:00 +0100
+
 libcan (0.1-46) unstable; urgency=low
 
   * Removed libcan-interface in favor of slim linkage
