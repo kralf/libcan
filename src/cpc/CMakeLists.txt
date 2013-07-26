@@ -1,10 +1,10 @@
-remake_find_library(
-  cpc cpc.h
-  PACKAGE libcpc
-)
+remake_find_package(libcpc CONFIG)
+remake_find_library(m math.h PACKAGE libm)
 
 remake_add_library(
-  cpc
-  FORCE_LINK interface ${CPC_LIBRARY} "-Wl,-soname=libcan.so"
+  can-cpc PREFIX OFF
+  *.c ../can/*.c
+  LINK ${TULIBS_LIBRARIES} ${LIBCPC_LIBRARIES} ${M_LIBRARY}
+    "-Wl,-soname=libcan.so"
 )
 remake_add_headers()
