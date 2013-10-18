@@ -23,30 +23,69 @@
 
 /** \file
   * \brief Generic CAN communication
-  * Common commands used to communicate via the CAN protocol.
+  * Common commands used to communicate via the CANopen protocol.
   * These methods are implemented by all CAN communication backends.
   */
 
 #include <tulibs/config.h>
 
-/** Predefined CAN constants
+/** \brief Predefined CAN argument prefix
   */
-#define CAN_CONFIG_ARG_PREFIX               "can"
+#define CAN_ARG_PREFIX                        "can"
 
-/** Predefined CAN error codes
+/** \name Node Identifiers
+  * \brief Predefined node identifiers as specified by the CANopen standard
   */
-#define CAN_ERROR_NONE                      0
-#define CAN_ERROR_OPEN                      1
-#define CAN_ERROR_SETUP                     2
-#define CAN_ERROR_CLOSE                     3
-#define CAN_ERROR_SEND                      4
-#define CAN_ERROR_RECEIVE                   5
+//@{
+#define CAN_NODE_ID_MAX                       0x007F
+#define CAN_NODE_ID_BROADCAST                 0x0000
+//@}
+
+/** \name SDO Communication Object Identifiers
+  * \brief Predefined SDO object identifiers as specified by CANopen
+  */
+//@{
+#define CAN_COB_ID_SDO_SEND                   0x0600
+#define CAN_COB_ID_SDO_RECEIVE                0x0580
+#define CAN_COB_ID_SDO_EMERGENCY              0x0080
+//@}
+
+/** \name SDO Commands
+  * \brief Predefined SDO commands as specified by the CANopen standard
+  */
+//@{
+#define CAN_CMD_SDO_WRITE_SEND_1_BYTE         0x2F
+#define CAN_CMD_SDO_WRITE_SEND_2_BYTE         0x2B
+#define CAN_CMD_SDO_WRITE_SEND_4_BYTE         0x23
+#define CAN_CMD_SDO_WRITE_SEND_UNDEFINED      0x22
+#define CAN_CMD_SDO_WRITE_RECEIVE             0x60
+
+#define CAN_CMD_SDO_READ_RECEIVE_1_BYTE       0x4F
+#define CAN_CMD_SDO_READ_RECEIVE_2_BYTE       0x4B
+#define CAN_CMD_SDO_READ_RECEIVE_4_BYTE       0x43
+#define CAN_CMD_SDO_READ_RECEIVE_UNDEFINED    0x42
+#define CAN_CMD_SDO_READ_SEND                 0x40
+
+#define CAN_CMD_SDO_ABORT                     0xC0
+//@}
+
+/** \name Error Codes
+  * \brief Predefined CAN error codes
+  */
+//@{
+#define CAN_ERROR_NONE                        0
+#define CAN_ERROR_OPEN                        1
+#define CAN_ERROR_SETUP                       2
+#define CAN_ERROR_CLOSE                       3
+#define CAN_ERROR_SEND                        4
+#define CAN_ERROR_RECEIVE                     5
+//@}
 
 /** \brief Predefined CAN error descriptions
   */
 extern const char* can_errors[];
 
-/** \brief Structure defining a CAN message
+/** \brief Structure defining a CANopen SDO message
   */
 typedef struct can_message_t {
   int id;                         //!< The CAN message identifier.
@@ -117,21 +156,21 @@ int can_open(
 int can_close(
   can_device_p dev);
 
-/** \brief Send a CAN message
+/** \brief Send a CANopen SDO message
   * \note This method is implemented by the CAN communication backend.
   * \param[in] dev The CAN device to be used for sending the message.
-  * \param[in] message The CAN message to be sent.
+  * \param[in] message The CANopen SDO message to be sent.
   * \return The resulting error code.
   */
 int can_send_message(
   can_device_p dev,
   can_message_p message);
 
-/** \brief Synchronously receive a CAN message
+/** \brief Synchronously receive a CANopen SDO message
   * \note This method is implemented by the CAN communication backend.
   * \param[in] dev The CAN device to be used for receiving the message.
   * \param[in,out] message The sent CAN message that will be transformed
-  *   into the CAN message received.
+  *   into the CANopen SDO message received.
   * \return The resulting error code.
   */
 int can_receive_message(

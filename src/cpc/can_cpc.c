@@ -28,13 +28,14 @@
 #include <ctype.h>
 #include <sys/file.h>
 #include <sys/time.h>
-#include <unistd.h>
 #include <signal.h>
 #include <termios.h>
 #include <math.h>
 
 #include <libcpc/cpc.h>
 #include <libcpc/cpclib.h>
+
+#include <tulibs/timer.h>
 
 #include "can_cpc.h"
 
@@ -199,7 +200,7 @@ int can_cpc_send(can_cpc_device_p dev, can_message_p message) {
   CPC_CAN_MSG_T msg = {0x00L, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
   struct timeval time;
   fd_set set;
-  int i, error;
+  int error;
 
   msg.id = message->id;
   msg.length = message->length;
@@ -217,7 +218,7 @@ int can_cpc_send(can_cpc_device_p dev, can_message_p message) {
 
   while ((error = CPC_SendMsg(dev->handle, 0, &msg)) ==
     CPC_ERR_CAN_NO_TRANSMIT_BUF)
-    usleep(10);
+    timer_sleep(1e-5);
   if (!error)
     ++dev->num_sent;
   else
@@ -242,7 +243,7 @@ int can_cpc_receive(can_cpc_device_p dev, can_message_p message) {
     return CAN_CPC_ERROR_TIMEOUT;
 
   while (CPC_Handle(dev->handle))
-    usleep(10);
+    timer_sleep(1e-5);
   *message = dev->msg_received;
 
   return CAN_CPC_ERROR_NONE;

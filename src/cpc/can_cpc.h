@@ -31,22 +31,30 @@
 
 #include "can.h"
 
-/** Predefined CAN-CPC parameters
+/** \name Parameters
+  * \brief Predefined CAN-CPC parameters
   */
+//@{
 #define CAN_CPC_PARAMETER_DEVICE           "usb-dev"
 #define CAN_CPC_PARAMETER_BITRATE          "bitrate"
 #define CAN_CPC_PARAMETER_QUANTA_PER_BIT   "quanta-per-bit"
 #define CAN_CPC_PARAMETER_SAMPLING_POINT   "sampling-point"
 #define CAN_CPC_PARAMETER_TIMEOUT          "timeout"
+//@}
 
-/** Predefined CAN-CPC constants
+/** \name Constants
+  * \brief Predefined CAN-CPC constants
   */
+//@{
 #define CAN_CPC_CLOCK_FREQUENCY            16e6
 #define CAN_CPC_SYNC_JUMP_WIDTH            1
 #define CAN_CPC_TRIPLE_SAMPLING            0
+//@}
 
-/** Predefined CAN-CPC error codes
+/** \name Error Codes
+  * \brief Predefined CAN-CPC error codes
   */
+//@{
 #define CAN_CPC_ERROR_NONE                 0
 #define CAN_CPC_ERROR_OPEN                 1
 #define CAN_CPC_ERROR_CLOSE                2
@@ -54,6 +62,7 @@
 #define CAN_CPC_ERROR_TIMEOUT              4
 #define CAN_CPC_ERROR_SEND                 5
 #define CAN_CPC_ERROR_RECEIVE              6
+//@}
 
 /** \brief Predefined CAN-CPC error descriptions
   */
@@ -107,18 +116,18 @@ int can_cpc_setup(
   double sampling_point,
   double timeout);
 
-/** \brief Send message over open CAN-CPC device
+/** \brief Send a CANopen SDO message over an open CAN-CPC device
   * \param[in] dev The open CAN-CPC device to send the message over.
-  * \param[in] message The CAN message to be sent over the device.
+  * \param[in] message The CANopen SDO message to be sent over the device.
   * \return The resulting error code.
   */
 int can_cpc_send(
   can_cpc_device_p dev,
   can_message_p message);
 
-/** \brief Receive message on open CAN-CPC device
+/** \brief Receive a CANopen SDO message on an open CAN-CPC device
   * \param[in] dev The open CAN-CPC device to receive the message on.
-  * \param[out] message The CAN message received on the device.
+  * \param[out] message The CANopen SDO message received on the device.
   * \return The resulting error code.
   */
 int can_cpc_receive(

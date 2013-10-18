@@ -6,6 +6,7 @@ action="$1"
 if [ "$action" != "upgrade" ]
 then
   update-alternatives --remove libcan.so /usr/lib/libcan-serial.so
+  update-alternatives --remove libcan.so /usr/lib/libcan-usb.so
   update-alternatives --remove libcan.so /usr/lib/libcan-cpc.so
 fi
 

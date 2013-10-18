@@ -6,7 +6,7 @@ remake_project(
   libcan
   VERSION 0.1
   RELEASE alpha
-  SUMMARY "A simple, unified CAN communication library."
+  SUMMARY "A simple, lightweight CANopen communication library."
   AUTHOR "Ralf Kaestner"
   CONTACT "ralf.kaestner@gmail.com"
   HOME "http://github.com/kralf/libcan"

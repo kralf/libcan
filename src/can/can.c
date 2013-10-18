@@ -48,10 +48,10 @@ int can_init_arg(can_device_p dev, int argc, char **argv, const char*
   config_t config;
   int result;
 
-  if (result = config_init_arg(&config, argc, argv, (prefix) ? prefix :
-      CAN_CONFIG_ARG_PREFIX, args)) {
+  if ((result = config_init_arg(&config, argc, argv, (prefix) ? prefix :
+      CAN_ARG_PREFIX, args))) {
     config_print_usage(stdout, argv[0], args, result);
-    config_print_help(stdout, &can_default_config, CAN_CONFIG_ARG_PREFIX);
+    config_print_help(stdout, &can_default_config, CAN_ARG_PREFIX);
   }
   else
     can_init(dev, &config);
