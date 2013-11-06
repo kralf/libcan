@@ -21,17 +21,18 @@
 #ifndef CAN_H
 #define CAN_H
 
-/** \file
+/** \file can.h
   * \brief Generic CAN communication
+  * 
   * Common commands used to communicate via the CANopen protocol.
-  * These methods are implemented by all CAN communication backends.
+  * These methods are implemented by all CAN communication back-ends.
   */
 
-#include <tulibs/config.h>
+#include <config/parser.h>
 
 /** \brief Predefined CAN argument prefix
   */
-#define CAN_ARG_PREFIX                        "can"
+#define CAN_ARG_PREFIX                        "can-"
 
 /** \name Node Identifiers
   * \brief Predefined node identifiers as specified by the CANopen standard
@@ -74,11 +75,12 @@
   */
 //@{
 #define CAN_ERROR_NONE                        0
-#define CAN_ERROR_OPEN                        1
-#define CAN_ERROR_SETUP                       2
-#define CAN_ERROR_CLOSE                       3
-#define CAN_ERROR_SEND                        4
-#define CAN_ERROR_RECEIVE                     5
+#define CAN_ERROR_CONFIG                      1
+#define CAN_ERROR_OPEN                        2
+#define CAN_ERROR_SETUP                       3
+#define CAN_ERROR_CLOSE                       4
+#define CAN_ERROR_SEND                        5
+#define CAN_ERROR_RECEIVE                     6
 //@}
 
 /** \brief Predefined CAN error descriptions
@@ -97,7 +99,7 @@ typedef struct can_message_t {
 /** \brief Structure defining a CAN device
   */
 typedef struct can_device_t {
-  void* comm_dev;                 //!< The CAN communication device.
+  void* comm_dev;                 //!< The opaque CAN communication device.
 
   config_t config;                //!< The CAN configuration parameters.
 
@@ -106,33 +108,52 @@ typedef struct can_device_t {
   ssize_t num_received;           //!< The number of CAN messages read.
 } can_device_t, *can_device_p;
 
+/** \brief Predefined CAN device name
+  */
+extern const char* can_device_name;
+
 /** \brief Predefined CAN default configuration
   */
 extern config_t can_default_config;
 
 /** \brief Initialize CAN device
+  * \note The device will be initialized using default configuration
+  *   parameters.
   * \param[in] dev The CAN device to be initialized.
-  * \param[in] config The optional CAN device configuration parameters.
-  *   Can be null.
+  * \return The resulting configuration error code.
   */
 void can_init(
+  can_device_p dev);
+
+/** \brief Initialize CAN device from configuration
+  * \param[in] dev The CAN device to be initialized.
+  * \param[in] config The CAN device configuration parameters.
+  * \return The resulting error code.
+  */
+int can_init_config(
   can_device_p dev,
   config_p config);
 
-/** \brief Initialize CAN device from command line arguments
+/** \brief Initialize CAN device by parsing command line arguments
   * \param[in] dev The CAN device to be initialized.
+  * \param[in] parser The initialized configuration parser which will
+  *   be used to parse the command line arguments into the CAN device
+  *   configuration.
+  * \param[in] prefix An optional argument prefix for the CAN device
+  *   configuration parameters. If null, the default prefix is chosen.
   * \param[in] argc The number of supplied command line arguments.
   * \param[in] argv The list of supplied command line arguments.
-  * \param[in] prefix An optional argument prefix.
-  * \param[in] args An optional string naming the expected arguments.
-  * \return The resulting configuration error code.
+  * \param[in] exit The exit policy of the parser in case of an error
+  *   or help request.
+  * \return The resulting error code.
   */
-int can_init_arg(
+int can_init_config_parse(
   can_device_p dev,
+  config_parser_p parser,
+  const char* prefix,
   int argc,
   char **argv,
-  const char* prefix,
-  const char* args);
+  config_parser_exit_t exit);
 
 /** \brief Destroy an existing CAN device
   * \param[in] dev The CAN device to be destroyed.

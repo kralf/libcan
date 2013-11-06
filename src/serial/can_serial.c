@@ -23,35 +23,65 @@
 #include <unistd.h>
 #include <string.h>
 
-#include <tulibs/serial.h>
+#include <serial/serial.h>
 
 #include "can_serial.h"
 
 const char* can_serial_errors[] = {
-  "success",
-  "CAN serial conversion error",
-  "CAN serial send failed",
-  "CAN serial receive failed",
-  "error reading from CAN serial device",
-  "error writing to CAN serial device",
-  "CAN serial device not responding",
-  "unexpected response from CAN serial device",
-  "CAN serial checksum error",
+  "Success",
+  "CAN-Serial conversion error",
+  "CAN-Serial send failed",
+  "CAN-Serial receive failed",
+  "Error reading from CAN-Serial device",
+  "Error writing to CAN-Serial device",
+  "CAN-Serial device not responding",
+  "Unexpected response from CAN-Serial device",
+  "CAN-Serial checksum error",
 };
 
-param_t can_serial_default_params[] = {
-  {CAN_SERIAL_PARAMETER_DEVICE, "/dev/ttyS0"},
-  {CAN_SERIAL_PARAMETER_BAUDRATE, "38400"},
-  {CAN_SERIAL_PARAMETER_DATABITS, "8"},
-  {CAN_SERIAL_PARAMETER_STOPBITS, "1"},
-  {CAN_SERIAL_PARAMETER_PARITY, "0"},
-  {CAN_SERIAL_PARAMETER_FLOW_CTRL, "0"},
-  {CAN_SERIAL_PARAMETER_TIMEOUT, "0.1"},
+const char* can_device_name = "CAN-Serial";
+
+config_param_t can_serial_default_params[] = {
+  {CAN_SERIAL_PARAMETER_DEVICE,
+    config_param_type_string,
+    "/dev/ttyS0",
+    "",
+    "Path to the special file of the connected CAN-Serial device"},
+  {CAN_SERIAL_PARAMETER_BAUD_RATE,
+    config_param_type_int,
+    "38400",
+    "[50, 230400]",
+    "The requested baud rate of the CAN-Serial device"},
+  {CAN_SERIAL_PARAMETER_DATA_BITS,
+    config_param_type_int,
+    "8",
+    "[5, 8]",
+    "The requested number of data bits of the CAN-Serial device"},
+  {CAN_SERIAL_PARAMETER_STOP_BITS,
+    config_param_type_int,
+    "1",
+    "[1, 2]",
+    "The requested number of stop bits of the CAN-Serial device"},
+  {CAN_SERIAL_PARAMETER_PARITY,
+    config_param_type_enum,
+    "none",
+    "none|odd|even",
+    "The requested parity setting of the CAN-Serial device"},
+  {CAN_SERIAL_PARAMETER_FLOW_CTRL,
+    config_param_type_enum,
+    "off",
+    "off|xon_xoff|rts_cts",
+    "The requested flow control setting of the CAN-Serial device"},
+  {CAN_SERIAL_PARAMETER_TIMEOUT,
+    config_param_type_float,
+    "0.01",
+    "",
+    "The CAN-Serial communication timeout in [s]"},
 };
 
 config_t can_default_config = {
   can_serial_default_params,
-  sizeof(can_serial_default_params)/sizeof(param_t),
+  sizeof(can_serial_default_params)/sizeof(config_param_t),
 };
 
 int can_open(can_device_p dev) {
@@ -65,9 +95,9 @@ int can_open(can_device_p dev) {
     if (serial_open(dev->comm_dev,
         config_get_string(&dev->config, CAN_SERIAL_PARAMETER_DEVICE)) ||
       serial_setup(dev->comm_dev,
-        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_BAUDRATE),
-        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_DATABITS),
-        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_STOPBITS),
+        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_BAUD_RATE),
+        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_DATA_BITS),
+        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_STOP_BITS),
         config_get_int(&dev->config, CAN_SERIAL_PARAMETER_PARITY),
         config_get_int(&dev->config, CAN_SERIAL_PARAMETER_FLOW_CTRL),
         config_get_float(&dev->config, CAN_SERIAL_PARAMETER_TIMEOUT))) {

@@ -23,41 +23,52 @@
 #include "can.h"
 
 const char* can_errors[] = {
-  "success",
-  "error opening CAN device",
-  "error setting CAN device parameters",
-  "error closing CAN device",
-  "error sending CAN message",
-  "error receiving CAN message",
+  "Success",
+  "Configuration error",
+  "Error opening CAN device",
+  "Error setting CAN device parameters",
+  "Error closing CAN device",
+  "Error sending CAN message",
+  "Error receiving CAN message",
 };
 
-void can_init(can_device_p dev, config_p config) {
+void can_init(can_device_p dev) {
+  can_init_config(dev, &can_default_config);  
+}
+
+int can_init_config(can_device_p dev, config_p config) {
   dev->comm_dev = 0;
-
-  config_init_default(&dev->config, &can_default_config);
-  if (config)
-    config_set(&dev->config, config);
-
+  
   dev->num_references = 0;
   dev->num_sent = 0;
   dev->num_received = 0;
+  
+  config_init_copy(&dev->config, &can_default_config);
+  if ((config != &can_default_config) && config_set(&dev->config, config))
+    return CAN_ERROR_CONFIG;
+
+  return CAN_ERROR_NONE;
 }
 
-int can_init_arg(can_device_p dev, int argc, char **argv, const char*
-    prefix, const char* args) {
-  config_t config;
-  int result;
-
-  if ((result = config_init_arg(&config, argc, argv, (prefix) ? prefix :
-      CAN_ARG_PREFIX, args))) {
-    config_print_usage(stdout, argv[0], args, result);
-    config_print_help(stdout, &can_default_config, CAN_ARG_PREFIX);
-  }
-  else
-    can_init(dev, &config);
-
-  config_destroy(&config);
-  return result;
+int can_init_config_parse(can_device_p dev, config_parser_p parser,
+    const char* prefix, int argc, char **argv, config_parser_exit_t exit) {
+  char summary[sizeof(((config_parser_option_group_p)0)->summary)];
+  char description[sizeof(((config_parser_option_group_p)0)->description)];
+  
+  sprintf(summary, "%s options", can_device_name);
+  sprintf(description,
+    "These options control the settings for the %s communication interface. "
+    "The type of interface depends on the momentarily selected alternative "
+    "of the underlying CANopen library. Use the update-alternatives command "
+    "to inspect or change this alternative.", can_device_name);
+  config_p config = &config_parser_add_option_group(parser,
+    &can_default_config, prefix ? prefix : CAN_ARG_PREFIX, summary,
+    description)->options;
+  
+  if (config_parser_parse(parser, argc, argv, exit))
+    return CAN_ERROR_CONFIG;
+  
+  return can_init_config(dev, config);
 }
 
 void can_destroy(can_device_p dev) {

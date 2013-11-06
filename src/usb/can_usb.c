@@ -23,38 +23,80 @@
 #include <unistd.h>
 #include <string.h>
 
-#include <tulibs/ftdi.h>
+#include <ftdi/ftdi.h>
 
 #include "can_usb.h"
 
 const char* can_usb_errors[] = {
-  "success",
-  "CAN USB conversion error",
-  "CAN USB send failed",
-  "CAN USB receive failed",
-  "error reading from CAN USB device",
-  "error writing to CAN USB device",
-  "CAN USB device not responding",
-  "unexpected response from CAN USB device",
-  "CAN USB checksum error",
+  "Success",
+  "CAN-USB conversion error",
+  "CAN-USB send failed",
+  "CAN-USB receive failed",
+  "Error reading from CAN-USB device",
+  "Error writing to CAN-USB device",
+  "CAN-USB device not responding",
+  "Unexpected response from CAN-USB device",
+  "CAN-USB checksum error",
 };
 
-param_t can_usb_default_params[] = {
-  {CAN_USB_PARAMETER_DEVICE, "/dev/bus/usb/001/001"},
-  {CAN_USB_PARAMETER_INTERFACE, "0"},
-  {CAN_USB_PARAMETER_BAUDRATE, "1000000"},
-  {CAN_USB_PARAMETER_DATABITS, "8"},
-  {CAN_USB_PARAMETER_STOPBITS, "1"},
-  {CAN_USB_PARAMETER_PARITY, "0"},
-  {CAN_USB_PARAMETER_FLOW_CTRL, "0"},
-  {CAN_USB_PARAMETER_BREAK, "0"},
-  {CAN_USB_PARAMETER_TIMEOUT, "0.1"},
-  {CAN_USB_PARAMETER_LATENCY, "0.016"},
+const char* can_device_name = "CAN-USB";
+
+config_param_t can_usb_default_params[] = {
+  {CAN_USB_PARAMETER_DEVICE,
+    config_param_type_string,
+    "/dev/bus/usb/001/001",
+    "",
+    "Path to the special file of the connected CAN-USB FTDI device"},
+  {CAN_USB_PARAMETER_INTERFACE,
+    config_param_type_enum,
+    "any",
+    "any|a|b|c|d",
+    "The requested FTDI serial interface of the CAN-USB device"},
+  {CAN_USB_PARAMETER_BAUD_RATE,
+    config_param_type_int,
+    "1000000",
+    "[183, 3000000]",
+    "The requested serial baud rate of the CAN-USB device"},
+  {CAN_USB_PARAMETER_DATA_BITS,
+    config_param_type_int,
+    "8",
+    "[7, 8]",
+    "The requested number of serial data bits of the CAN-USB device"},
+  {CAN_USB_PARAMETER_STOP_BITS,
+    config_param_type_int,
+    "1",
+    "[1, 15]",
+    "The requested number of serial stop bits of the CAN-USB device"},
+  {CAN_USB_PARAMETER_PARITY,
+    config_param_type_enum,
+    "none",
+    "none|odd|even|mark|space",
+    "The requested serial parity setting of the CAN-USB device"},
+  {CAN_USB_PARAMETER_FLOW_CTRL,
+    config_param_type_enum,
+    "off",
+    "off|xon_xoff|rts_cts|dtr_dsr",
+    "The requested serial flow control setting of the CAN-USB device"},
+  {CAN_USB_PARAMETER_BREAK,
+    config_param_type_enum,
+    "off",
+    "off|on",
+    "The requested serial break setting of the CAN-USB device"},
+  {CAN_USB_PARAMETER_TIMEOUT,
+    config_param_type_float,
+    "0.1",
+    "",
+    "The CAN-USB serial communication timeout in [s]"},
+  {CAN_USB_PARAMETER_LATENCY,
+    config_param_type_float,
+    "0.016",
+    "",
+    "The CAN-USB serial communication latency in [s]"},
 };
 
 config_t can_default_config = {
   can_usb_default_params,
-  sizeof(can_usb_default_params)/sizeof(param_t),
+  sizeof(can_usb_default_params)/sizeof(config_param_t),
 };
 
 int can_open(can_device_p dev) {
@@ -77,9 +119,9 @@ int can_open(can_device_p dev) {
         config_get_string(&dev->config, CAN_USB_PARAMETER_DEVICE),
         config_get_int(&dev->config, CAN_USB_PARAMETER_INTERFACE)) ||
       ftdi_setup(dev->comm_dev,
-        config_get_int(&dev->config, CAN_USB_PARAMETER_BAUDRATE),
-        config_get_int(&dev->config, CAN_USB_PARAMETER_DATABITS),
-        config_get_int(&dev->config, CAN_USB_PARAMETER_STOPBITS),
+        config_get_int(&dev->config, CAN_USB_PARAMETER_BAUD_RATE),
+        config_get_int(&dev->config, CAN_USB_PARAMETER_DATA_BITS),
+        config_get_int(&dev->config, CAN_USB_PARAMETER_STOP_BITS),
         config_get_int(&dev->config, CAN_USB_PARAMETER_PARITY),
         config_get_int(&dev->config, CAN_USB_PARAMETER_FLOW_CTRL),
         config_get_int(&dev->config, CAN_USB_PARAMETER_BREAK),

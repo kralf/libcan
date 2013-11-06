@@ -25,8 +25,9 @@
   *  \file can_usb.h
   *  \brief CAN communication over EPOS USB
   *  \author Ralf Kaestner
-  *  This layer provides low-level mechanisms for CAN communication via EPOS
-  *  controllers over USB connections.
+  * 
+  *  This layer provides low-level mechanisms for CANopen communication via
+  *  FTDI serial connections over USB links to EPOS controllers.
   */
 
 #include "can.h"
@@ -36,15 +37,15 @@
   */
 //@{
 #define CAN_USB_PARAMETER_DEVICE           "usb-dev"
-#define CAN_USB_PARAMETER_INTERFACE        "serial-interface"
-#define CAN_USB_PARAMETER_BAUDRATE         "serial-baudrate"
-#define CAN_USB_PARAMETER_DATABITS         "serial-databits"
-#define CAN_USB_PARAMETER_STOPBITS         "serial-stopbits"
-#define CAN_USB_PARAMETER_PARITY           "serial-parity"
-#define CAN_USB_PARAMETER_FLOW_CTRL        "serial-flow-ctrl"
-#define CAN_USB_PARAMETER_BREAK            "serial-break"
-#define CAN_USB_PARAMETER_TIMEOUT          "timeout"
-#define CAN_USB_PARAMETER_LATENCY          "latency"
+#define CAN_USB_PARAMETER_INTERFACE        "usb-serial-interface"
+#define CAN_USB_PARAMETER_BAUD_RATE        "usb-serial-baud-rate"
+#define CAN_USB_PARAMETER_DATA_BITS        "usb-serial-databits"
+#define CAN_USB_PARAMETER_STOP_BITS        "usb-serial-stopbits"
+#define CAN_USB_PARAMETER_PARITY           "usb-serial-parity"
+#define CAN_USB_PARAMETER_FLOW_CTRL        "usb-serial-flow-ctrl"
+#define CAN_USB_PARAMETER_BREAK            "usb-serial-break"
+#define CAN_USB_PARAMETER_TIMEOUT          "usb-serial-timeout"
+#define CAN_USB_PARAMETER_LATENCY          "usb-serial-latency"
 //@}
 
 /** \name Operation Codes

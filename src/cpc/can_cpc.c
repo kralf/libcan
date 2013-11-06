@@ -35,31 +35,55 @@
 #include <libcpc/cpc.h>
 #include <libcpc/cpclib.h>
 
-#include <tulibs/timer.h>
+#include <timer/timer.h>
 
 #include "can_cpc.h"
 
 const char* can_cpc_errors[] = {
-  "success",
-  "error opening CAN-CPC device",
-  "error closing CAN-CPC device",
-  "error setting CAN-CPC device parameters",
+  "Success",
+  "Error opening CAN-CPC device",
+  "Error closing CAN-CPC device",
+  "Error setting CAN-CPC device parameters",
   "CAN-CPC device select timeout",
-  "error sending to CAN-CPC device",
-  "error receiving from CAN-CPC device",
+  "Error sending to CAN-CPC device",
+  "Error receiving from CAN-CPC device",
 };
 
-param_t can_cpc_default_parameters[] = {
-  {CAN_CPC_PARAMETER_DEVICE, "/dev/cpc_usb0"},
-  {CAN_CPC_PARAMETER_BITRATE, "1000"},
-  {CAN_CPC_PARAMETER_QUANTA_PER_BIT, "8"},
-  {CAN_CPC_PARAMETER_SAMPLING_POINT, "0.75"},
-  {CAN_CPC_PARAMETER_TIMEOUT, "0.01"},
+const char* can_device_name = "CAN-CPC";
+
+config_param_t can_cpc_default_parameters[] = {
+  {CAN_CPC_PARAMETER_DEVICE,
+    config_param_type_string,
+    "/dev/cpc_usb0",
+    "",
+    "Path to the special file of the connected CAN-CPC device"},
+  {CAN_CPC_PARAMETER_BIT_RATE,
+    config_param_type_int,
+    "1000",
+    "[10, 1000]",
+    "The requested bit rate of the CAN bus in [kbit/s]"},
+  {CAN_CPC_PARAMETER_QUANTA_PER_BIT,
+    config_param_type_int,
+    "8",
+    "[8, 16]",
+    "The requested number of time quanta per bit of the CAN bus"},
+  {CAN_CPC_PARAMETER_SAMPLING_POINT,
+    config_param_type_float,
+    "0.75",
+    "[0.75, 0.875]",
+    "The requested synchronization sample point of the CAN bus, "
+    "expressed as a ratio of the second phase buffer segment's "
+    "start time quantum and the number of time quanta per bit"},
+  {CAN_CPC_PARAMETER_TIMEOUT,
+    config_param_type_float,
+    "0.01",
+    "",
+    "The CAN bus communication timeout in [s]"},
 };
 
 config_t can_default_config = {
   can_cpc_default_parameters,
-  sizeof(can_cpc_default_parameters)/sizeof(param_t),
+  sizeof(can_cpc_default_parameters)/sizeof(config_param_t),
 };
 
 void can_cpc_handle(int handle, const CPC_MSG_T* msg, void* custom);
@@ -75,7 +99,7 @@ int can_open(can_device_p dev) {
     if (can_cpc_open(dev->comm_dev,
         config_get_string(&dev->config, CAN_CPC_PARAMETER_DEVICE)) ||
       can_cpc_setup(dev->comm_dev,
-        config_get_int(&dev->config, CAN_CPC_PARAMETER_BITRATE),
+        config_get_int(&dev->config, CAN_CPC_PARAMETER_BIT_RATE),
         config_get_int(&dev->config, CAN_CPC_PARAMETER_QUANTA_PER_BIT),
         config_get_float(&dev->config, CAN_CPC_PARAMETER_SAMPLING_POINT),
         config_get_float(&dev->config, CAN_CPC_PARAMETER_TIMEOUT))) {

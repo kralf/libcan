@@ -25,27 +25,28 @@
   *  \file can_serial.h
   *  \brief CAN communication over EPOS RS232
   *  \author Marc Rauer, Ralf Kaestner
+  * 
   *  This layer provides low-level mechanisms for CANopen communication via
-  *  EPOS controllers over RS232 serial connections.
+  *  RS232 serial connections to EPOS controllers.
   */
 
 #include "can.h"
 
 /** \name Parameters
-  * \brief Predefined CAN-serial parameters
+  * \brief Predefined CAN-Serial parameters
   */
 //@{
 #define CAN_SERIAL_PARAMETER_DEVICE             "serial-dev"
-#define CAN_SERIAL_PARAMETER_BAUDRATE           "serial-baudrate"
-#define CAN_SERIAL_PARAMETER_DATABITS           "serial-databits"
-#define CAN_SERIAL_PARAMETER_STOPBITS           "serial-stopbits"
+#define CAN_SERIAL_PARAMETER_BAUD_RATE          "serial-baud-rate"
+#define CAN_SERIAL_PARAMETER_DATA_BITS          "serial-data-bits"
+#define CAN_SERIAL_PARAMETER_STOP_BITS          "serial-stop-bits"
 #define CAN_SERIAL_PARAMETER_PARITY             "serial-parity"
 #define CAN_SERIAL_PARAMETER_FLOW_CTRL          "serial-flow-ctrl"
-#define CAN_SERIAL_PARAMETER_TIMEOUT            "timeout"
+#define CAN_SERIAL_PARAMETER_TIMEOUT            "serial-timeout"
 //@}
 
 /** \name Operation Codes
-  * \brief Predefined CAN-serial operation codes
+  * \brief Predefined CAN-Serial operation codes
   */
 //@{
 #define CAN_SERIAL_OPCODE_RESPONSE              0x00
@@ -54,7 +55,7 @@
 //@}
 
 /** \name Acknowledges
-  * \brief Predefined CAN-serial acknowledges
+  * \brief Predefined CAN-Serial acknowledges
   */
 //@{
 #define CAN_SERIAL_ACK_OKAY                     0x4F
@@ -62,7 +63,7 @@
 //@}
 
 /** \name Error Codes
-  * \brief Predefined CAN-serial error codes
+  * \brief Predefined CAN-Serial error codes
   */
 //@{
 #define CAN_SERIAL_ERROR_NONE                   0
@@ -76,7 +77,7 @@
 #define CAN_SERIAL_ERROR_CRC                    8
 //@}
 
-/** \brief Predefined CAN-serial error descriptions
+/** \brief Predefined CAN-Serial error descriptions
   */
 extern const char* can_serial_errors[];
 
@@ -108,11 +109,11 @@ int can_serial_to_epos(
   can_message_p message);
 
 /** \brief Send serial data to a CAN device
-  * \param[in] dev The open CAN-serial device to send data to.
+  * \param[in] dev The open CAN-Serial device to send data to.
   * \param[in] data An array containing the serial data frame to be sent
   *   via an EPOS RS232 connection.
   * \param[in] num The size of the serial data frame to be sent.
-  * \return The number of bytes sent to the CAN-serial device or the
+  * \return The number of bytes sent to the CAN-Serial device or the
   *   negative error code.
   */
 int can_serial_send(
@@ -121,10 +122,10 @@ int can_serial_send(
   size_t num);
 
 /** \brief Receive serial data from a CAN device
-  * \param[in] dev The open CAN-serial device to reveice data from.
+  * \param[in] dev The open CAN-Serial device to reveice data from.
   * \param[out] data An array representing the serial data frame received
   *   via an EPOS RS232 connection.
-  * \return The number of bytes received from the CAN-serial device or the
+  * \return The number of bytes received from the CAN-Serial device or the
   *   negative error code.
   */
 int can_serial_receive(

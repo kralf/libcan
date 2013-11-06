@@ -25,7 +25,8 @@
   *  \file can_cpc.h
   *  \brief CAN communication over CAN-CPC
   *  \author Ralf Kaestner
-  *  This layer provides low-level mechanisms for CAN communication via
+  * 
+  *  This layer provides low-level mechanisms for CANopen communication via
   *  CAN-CPC hardware.
   */
 
@@ -35,11 +36,11 @@
   * \brief Predefined CAN-CPC parameters
   */
 //@{
-#define CAN_CPC_PARAMETER_DEVICE           "usb-dev"
-#define CAN_CPC_PARAMETER_BITRATE          "bitrate"
-#define CAN_CPC_PARAMETER_QUANTA_PER_BIT   "quanta-per-bit"
-#define CAN_CPC_PARAMETER_SAMPLING_POINT   "sampling-point"
-#define CAN_CPC_PARAMETER_TIMEOUT          "timeout"
+#define CAN_CPC_PARAMETER_DEVICE           "cpc-dev"
+#define CAN_CPC_PARAMETER_BIT_RATE         "cpc-bit-rate"
+#define CAN_CPC_PARAMETER_QUANTA_PER_BIT   "cpc-quanta-per-bit"
+#define CAN_CPC_PARAMETER_SAMPLING_POINT   "cpc-sampling-point"
+#define CAN_CPC_PARAMETER_TIMEOUT          "cpc-timeout"
 //@}
 
 /** \name Constants

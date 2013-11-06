@@ -1,3 +1,11 @@
+libcan (0.2-50) unstable; urgency=low
+
+  * Adapted initialization functions to revised tulibs config module
+  * Revised error string representations
+  * Increased minor version
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Wed, 06 Nov 2013 17:56:00 +0100
+ 
 libcan (0.1-49) unstable; urgency=low
 
   * Added can-usb library for CAN communication via EPOS2 FTDI interfaces
@@ -6,6 +14,7 @@ libcan (0.1-49) unstable; urgency=low
   * Revised documentation
 
  -- Ralf Kaestner <ralf.kaestner@gmail.com>  Fri, 18 Oct 2013 10:07:00 +0100
+
 
 libcan (0.1-48) unstable; urgency=low
 
