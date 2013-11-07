@@ -135,7 +135,7 @@ int can_send_message(can_device_p dev, can_message_p message) {
   int num;
 
   num = can_serial_from_epos(dev, message, data);
-  if ((num > 0) && (can_serial_send(dev, data, num) > 0)) {
+  if ((num > 0) && (can_serial_send(dev, data, num) == num)) {
     ++dev->num_sent;
     return CAN_ERROR_NONE;
   }
