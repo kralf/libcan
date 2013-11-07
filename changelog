@@ -1,3 +1,10 @@
+libcan (0.2-55) unstable; urgency=low
+
+  * Added ranges for CAN-USB timing parameters
+  * Decreased default CAN-USB latency to 1ms
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Thu, 07 Nov 2013 12:43:00 +0100
+ 
 libcan (0.2-54) unstable; urgency=low
 
   * A minor code cleanup

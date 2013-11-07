@@ -85,12 +85,12 @@ config_param_t can_usb_default_params[] = {
   {CAN_USB_PARAMETER_TIMEOUT,
     config_param_type_float,
     "0.1",
-    "",
+    "[0.0, inf)",
     "The CAN-USB serial communication timeout in [s]"},
   {CAN_USB_PARAMETER_LATENCY,
     config_param_type_float,
-    "0.016",
-    "",
+    "0.001",
+    "[0.001, 0.255]",
     "The CAN-USB serial communication latency in [s]"},
 };
 
