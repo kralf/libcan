@@ -361,9 +361,8 @@ int can_usb_receive(can_device_p dev, unsigned char* data) {
   can_usb_change_byte_order(data, num_recv);
 
   can_usb_calc_crc(data, num_recv, crc_value);
-  if ((crc_value[0] != 0x00) || (crc_value[1] != 0x00)) {
+  if ((crc_value[0] != 0x00) || (crc_value[1] != 0x00))
     return -CAN_USB_ERROR_CRC;
-  }
 
   can_usb_change_word_order(data, num_recv);
 
