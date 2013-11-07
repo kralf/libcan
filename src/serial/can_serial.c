@@ -51,7 +51,7 @@ config_param_t can_serial_default_params[] = {
     config_param_type_int,
     "38400",
     "[50, 230400]",
-    "The requested baud rate of the CAN-Serial device"},
+    "The requested baud rate of the CAN-Serial device in [baud]"},
   {CAN_SERIAL_PARAMETER_DATA_BITS,
     config_param_type_int,
     "8",

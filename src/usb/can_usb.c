@@ -56,7 +56,7 @@ config_param_t can_usb_default_params[] = {
     config_param_type_int,
     "1000000",
     "[183, 3000000]",
-    "The requested serial baud rate of the CAN-USB device"},
+    "The requested serial baud rate of the CAN-USB device in [baud]"},
   {CAN_USB_PARAMETER_DATA_BITS,
     config_param_type_int,
     "8",
