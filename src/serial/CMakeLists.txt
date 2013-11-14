@@ -5,4 +5,4 @@ remake_add_library(
   *.c ../can/*.c
   LINK ${TULIBS_LIBRARIES} "-Wl,-soname=libcan.so"
 )
-remake_add_headers(INSTALL serial)
+remake_add_headers()

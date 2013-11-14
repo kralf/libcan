@@ -1,3 +1,10 @@
+libcan (0.2-56) unstable; urgency=low
+
+  * Adapted can_init_config() to changes in Tulibs configuration interface
+  * Added Doxygen main page and license page
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Thu, 14 Nov 2013 08:04:00 +0100
+ 
 libcan (0.2-55) unstable; urgency=low
 
   * Added ranges for CAN-USB timing parameters
@@ -46,7 +53,6 @@ libcan (0.1-49) unstable; urgency=low
   * Revised documentation
 
  -- Ralf Kaestner <ralf.kaestner@gmail.com>  Fri, 18 Oct 2013 10:07:00 +0100
-
 
 libcan (0.1-48) unstable; urgency=low
 

@@ -7,4 +7,4 @@ remake_add_library(
   LINK ${TULIBS_LIBRARIES} ${LIBCPC_LIBRARIES} ${M_LIBRARY}
     "-Wl,-soname=libcan.so"
 )
-remake_add_headers(INSTALL cpc)
+remake_add_headers()

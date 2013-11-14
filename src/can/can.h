@@ -30,9 +30,9 @@
 
 #include <config/parser.h>
 
-/** \brief Predefined CAN argument prefix
+/** \brief Predefined CAN configuration parser option group
   */
-#define CAN_ARG_PREFIX                        "can-"
+#define CAN_CONFIG_PARSER_OPTION_GROUP        "can"
 
 /** \name Node Identifiers
   * \brief Predefined node identifiers as specified by the CANopen standard
@@ -139,8 +139,9 @@ int can_init_config(
   * \param[in] parser The initialized configuration parser which will
   *   be used to parse the command line arguments into the CAN device
   *   configuration.
-  * \param[in] prefix An optional argument prefix for the CAN device
-  *   configuration parameters. If null, the default prefix is chosen.
+  * \param[in] option_group An optional name of the parser option group
+  *   containing the CAN device configuration parameters. If null, the
+  *   default name is chosen.
   * \param[in] argc The number of supplied command line arguments.
   * \param[in] argv The list of supplied command line arguments.
   * \param[in] exit The exit policy of the parser in case of an error
@@ -150,7 +151,7 @@ int can_init_config(
 int can_init_config_parse(
   can_device_p dev,
   config_parser_p parser,
-  const char* prefix,
+  const char* option_group,
   int argc,
   char **argv,
   config_parser_exit_t exit);

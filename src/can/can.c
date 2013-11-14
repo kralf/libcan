@@ -51,7 +51,8 @@ int can_init_config(can_device_p dev, config_p config) {
 }
 
 int can_init_config_parse(can_device_p dev, config_parser_p parser,
-    const char* prefix, int argc, char **argv, config_parser_exit_t exit) {
+    const char* option_group, int argc, char **argv, config_parser_exit_t
+    exit) {
   char summary[sizeof(((config_parser_option_group_p)0)->summary)];
   char description[sizeof(((config_parser_option_group_p)0)->description)];
   
@@ -62,8 +63,8 @@ int can_init_config_parse(can_device_p dev, config_parser_p parser,
     "of the underlying CANopen library. Use the update-alternatives command "
     "to inspect or change this alternative.", can_device_name);
   config_p config = &config_parser_add_option_group(parser,
-    &can_default_config, prefix ? prefix : CAN_ARG_PREFIX, summary,
-    description)->options;
+    option_group ? option_group : CAN_CONFIG_PARSER_OPTION_GROUP,
+    &can_default_config, summary, description)->options;
   
   if (config_parser_parse(parser, argc, argv, exit))
     return CAN_ERROR_CONFIG;
