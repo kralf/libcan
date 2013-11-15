@@ -1,3 +1,9 @@
+libcan (0.2-57) unstable; urgency=low
+
+  * Debian extra scripts now using variable substitution
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Fri, 15 Nov 2013 13:40:00 +0100
+ 
 libcan (0.2-56) unstable; urgency=low
 
   * Adapted can_init_config() to changes in Tulibs configuration interface

@@ -19,9 +19,11 @@ remake_doc(
   html
 )
 
+remake_project_get(LIBRARY_DESTINATION DESTINATION)
+
 remake_pack_deb(
   DEPENDS tulibs libcpc
-  EXTRA debian/*
+  EXTRA debian/*.remake
 )
 remake_pack_deb(
   COMPONENT dev

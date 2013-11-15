@@ -1,0 +1,15 @@
+#!/bin/sh -e
+# postinst for libcan
+
+action="$1"
+oldversion="$2"
+
+if [ "$action" = "configure" ] || [ "$action" = "abort-upgrade" ]; then
+  update-alternatives --install ${LIBRARY_DESTINATION}/libcan.so libcan.so ${LIBRARY_DESTINATION}/libcan-serial.so 20
+  update-alternatives --install ${LIBRARY_DESTINATION}/libcan.so libcan.so ${LIBRARY_DESTINATION}/libcan-usb.so 10
+  update-alternatives --install ${LIBRARY_DESTINATION}/libcan.so libcan.so ${LIBRARY_DESTINATION}/libcan-cpc.so 5
+
+  ldconfig
+fi
+
+exit 0
