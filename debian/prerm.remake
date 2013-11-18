@@ -1,5 +1,4 @@
 #!/bin/sh -e
-# postrm for libcan
 
 action="$1"
 

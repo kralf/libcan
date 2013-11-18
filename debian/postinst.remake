@@ -1,5 +1,4 @@
 #!/bin/sh -e
-# postinst for libcan
 
 action="$1"
 oldversion="$2"

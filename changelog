@@ -1,3 +1,9 @@
+libcan (0.2-58) unstable; urgency=low
+
+  * Removed comments from postinst and prerm scripts
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Mon, 18 Nov 2013 17:05:00 +0100
+ 
 libcan (0.2-57) unstable; urgency=low
 
   * Debian extra scripts now using variable substitution
