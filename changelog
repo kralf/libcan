@@ -1,3 +1,9 @@
+libcan (0.3-60) unstable; urgency=low
+
+  * Minor documentation tweaks
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Thu, 28 Nov 2013 16:43:00 +0100
+ 
 libcan (0.3-59) unstable; urgency=low
 
   * First revision accounting for tulibs changes

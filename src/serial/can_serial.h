@@ -97,13 +97,14 @@ typedef struct can_serial_device_t {
 } can_serial_device_t;
 
 /** \brief Convert a CANopen SDO message into serial data
-  * \note This conversion translates CANopen SDO messages into the EPOS
-  *   RS232 serial protocol.
   * \param[in] dev The sending CAN device for which to convert the message.
   * \param[in] message The CANopen SDO message to be converted.
   * \param[out] data An array to store the converted serial data frame.
   * \return The number of bytes in the serial data frame to be sent or the
   *   negative error code.
+  * 
+  * This conversion method translates CANopen SDO messages into the EPOS
+  * RS232 serial protocol.
   */
 int can_serial_device_from_epos(
   can_serial_device_t* dev,
@@ -111,12 +112,13 @@ int can_serial_device_from_epos(
   unsigned char* data);
 
 /** \brief Convert serial data to a CANopen SDO message
-  * \note This conversion translates the EPOS RS232 serial protocol into
-  *   CANopen SDO messages.
   * \param[in] dev The receiving CAN device for which to convert the message.
   * \param[in] data The serial data frame to be converted.
   * \param[in,out] message The converted CANopen SDO message.
   * \return The resulting error code.
+  * 
+  * This conversion method translates the EPOS RS232 serial protocol into
+  * CANopen SDO messages.
   */
 int can_serial_device_to_epos(
   can_serial_device_t* dev,
@@ -148,39 +150,42 @@ int can_serial_device_receive(
   unsigned char* data);
 
 /** \brief Change the order of bytes in serial data frames
-  * \note The first two characters will be ignored, the following characters
-  *   will be reordered. This is necessary according to the EPOS Communication
-  *   guide.
   * \param[in,out] data An array of bytes representing the serial data frame
   *   for which to change the order.
   * \param[in] num The number of bytes in the array.
   * \return The number of reordered bytes within the serial data frame.
+  * 
+  * The first two characters will be ignored, the following characters
+  * will be reordered. This is necessary according to the EPOS Communication
+  * Guide.
   */
 size_t can_serial_change_byte_order(
   unsigned char* data,
   size_t num);
 
 /** \brief Change the order of words in serial data frames
-  * \note The first two characters will be ignored, the following characters
-  *   will be reordered in groups of two. This is necessary according to the
-  *   EPOS Communication guide.
   * \param[in,out] data An array of words representing the serial data for
   *   which to change order.
   * \param[in] num The number of bytes in the word array.
   * \return The number of reordered bytes within the serial data frame.
+  * 
+  * The first two characters will be ignored, the following characters
+  * will be reordered in groups of two. This is necessary according to the
+  * EPOS Communication Guide.
   */
 size_t can_serial_change_word_order(
   unsigned char* data,
   size_t num);
 
 /** \brief Calculate a 16-bit CRC checksum using CRC-CCITT algorithm
-  * \note Calculation has to include all bytes in the data frame. Internally,
-  *   the array is transformed to an array of words in order to calculate the
-  *   CRC. The CRC word is then tranformed back to an array of characters.
   * \param[in] data An array of bytes representing the serial data frame.
   * \param[in] num The number of bytes in the data frame.
   * \param[out] crc_value An array of two bytes to store the CRC-word.
   * \return The number of words built from the array.
+  * 
+  * Calculation has to include all bytes in the data frame. Internally,
+  * the array is transformed to an array of words in order to calculate the
+  * CRC. The CRC word is then tranformed back to an array of characters.
   */
 size_t can_serial_calc_crc(
   unsigned char* data,
