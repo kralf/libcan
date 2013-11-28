@@ -4,7 +4,7 @@ include(ReMake)
 
 remake_project(
   libcan
-  VERSION 0.2
+  VERSION 0.3
   RELEASE alpha
   SUMMARY "A simple, lightweight CANopen communication library."
   AUTHOR "Ralf Kaestner"

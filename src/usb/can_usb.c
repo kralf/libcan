@@ -29,13 +29,10 @@
 
 const char* can_usb_errors[] = {
   "Success",
+  "No such CAN-USB device",
   "CAN-USB conversion error",
-  "CAN-USB send failed",
-  "CAN-USB receive failed",
-  "Error reading from CAN-USB device",
-  "Error writing to CAN-USB device",
-  "CAN-USB device not responding",
-  "Unexpected response from CAN-USB device",
+  "Failed to send to CAN-USB device",
+  "Failed to receive from CAN-USB device",
   "CAN-USB checksum error",
 };
 
@@ -94,31 +91,30 @@ config_param_t can_usb_default_params[] = {
     "The CAN-USB serial communication latency in [s]"},
 };
 
-config_t can_default_config = {
+const config_default_t can_default_config = {
   can_usb_default_params,
   sizeof(can_usb_default_params)/sizeof(config_param_t),
 };
 
-int can_open(can_device_p dev) {
-  if (!dev->comm_dev) {
-    ftdi_context_init(ftdi_default_context);
-    dev->comm_dev = ftdi_match_name(ftdi_default_context,
+int can_usb_device_init(can_usb_device_t* dev, const char* name);
+void can_usb_device_destroy(can_usb_device_t* dev);
+
+int can_open(can_device_t* dev) {
+  error_clear(&dev->error);
+    
+  if (!dev->num_references) {
+    dev->comm_dev = malloc(sizeof(can_usb_device_t));
+    int result = can_usb_device_init(dev->comm_dev,
       config_get_string(&dev->config, CAN_USB_PARAMETER_DEVICE));
     
-    if (!dev->comm_dev) {
-      ftdi_context_release(ftdi_default_context);
-      return CAN_ERROR_OPEN;
-    }
-  }
-
-  if (!dev->num_references) {
     dev->num_sent = 0;
     dev->num_received = 0;
 
-    if (ftdi_open(dev->comm_dev,
-        config_get_string(&dev->config, CAN_USB_PARAMETER_DEVICE),
+    ftdi_device_t* ftdi_dev = ((can_usb_device_t*)dev->comm_dev)->ftdi_dev;
+    if (result ||
+      ftdi_device_open(dev->comm_dev,
         config_get_int(&dev->config, CAN_USB_PARAMETER_INTERFACE)) ||
-      ftdi_setup(dev->comm_dev,
+      ftdi_device_setup(dev->comm_dev,
         config_get_int(&dev->config, CAN_USB_PARAMETER_BAUD_RATE),
         config_get_int(&dev->config, CAN_USB_PARAMETER_DATA_BITS),
         config_get_int(&dev->config, CAN_USB_PARAMETER_STOP_BITS),
@@ -127,61 +123,82 @@ int can_open(can_device_p dev) {
         config_get_int(&dev->config, CAN_USB_PARAMETER_BREAK),
         config_get_float(&dev->config, CAN_USB_PARAMETER_TIMEOUT),
         config_get_float(&dev->config, CAN_USB_PARAMETER_LATENCY))) {
+      error_blame(&dev->error, &ftdi_dev->error, CAN_ERROR_OPEN);
+      
+      can_usb_device_destroy(dev->comm_dev);
+      
+      free(dev->comm_dev);
       dev->comm_dev = 0;
-      return CAN_ERROR_OPEN;
+      
+      return dev->error.code;
     }
   }
   ++dev->num_references;
 
-  return CAN_ERROR_NONE;
+  return dev->error.code;
 }
 
-int can_close(can_device_p dev) {
+int can_close(can_device_t* dev) {
+  error_clear(&dev->error);
+  
   if (dev->num_references) {
     --dev->num_references;
 
     if (!dev->num_references) {
-      if (ftdi_close(dev->comm_dev))
-        return CAN_ERROR_CLOSE;
-
-      dev->comm_dev = 0;
-      ftdi_context_release(ftdi_default_context);
+      ftdi_device_t* ftdi_dev = ((can_usb_device_t*)dev->comm_dev)->ftdi_dev;
+        
+      if (!ftdi_device_close(ftdi_dev)) {
+        can_usb_device_destroy(dev->comm_dev);
+        
+        free(dev->comm_dev);
+        dev->comm_dev = 0;
+      }
+      else
+        error_blame(&dev->error, &ftdi_dev->error, CAN_ERROR_CLOSE);
     }
-
-    return CAN_ERROR_NONE;
   }
   else
-    return CAN_ERROR_CLOSE;
+    error_setf(&dev->error, CAN_ERROR_CLOSE, "Non-zero reference count");
+  
+  return dev->error.code;
 }
 
-int can_send_message(can_device_p dev, can_message_p message) {
+int can_send_message(can_device_t* dev, const can_message_t* message) {
   unsigned char data[64];
-  int num;
+  
+  error_clear(&dev->error);
 
-  num = can_usb_from_epos(dev, message, data);
-  if ((num > 0) && (can_usb_send(dev, data, num) == num)) {
+  int result;
+  if (((result = can_usb_device_from_epos(dev->comm_dev,
+        message, data)) < 0) ||
+      (can_usb_device_send(dev->comm_dev, data, result) < 0))
+    error_blame(&dev->error, &((can_usb_device_t*)dev->comm_dev)->error,
+      CAN_ERROR_SEND);
+  else
     ++dev->num_sent;
-    return CAN_ERROR_NONE;
-  }
-  else
-    return CAN_ERROR_SEND;
+
+  return dev->error.code;
 }
 
-int can_receive_message(can_device_p dev, can_message_p message) {
+int can_receive_message(can_device_t* dev, can_message_t* message) {
   unsigned char data[64];
-  int num;
 
-  num = can_usb_receive(dev, data);
-  if ((num > 0) && !can_usb_to_epos(dev, data, message)) {
-    ++dev->num_received;
-    return CAN_ERROR_NONE;
-  }
+  error_clear(&dev->error);
+  
+  if ((can_usb_device_receive(dev->comm_dev, data) < 0) ||
+      can_usb_device_to_epos(dev->comm_dev, data, message))
+    error_blame(&dev->error, &((can_usb_device_t*)dev->comm_dev)->error,
+      CAN_ERROR_RECEIVE);
   else
-    return CAN_ERROR_RECEIVE;
+    ++dev->num_received;
+  
+  return dev->error.code;
 }
 
-int can_usb_from_epos(can_device_p dev, can_message_p message,
+int can_usb_from_epos(can_usb_device_t* dev, const can_message_t* message,
     unsigned char* data) {
+  error_clear(&dev->error);
+  
   switch (message->content[0]) {
     case CAN_CMD_SDO_WRITE_SEND_1_BYTE:
       data[0] = CAN_USB_OPCODE_WRITE;
@@ -237,11 +254,15 @@ int can_usb_from_epos(can_device_p dev, can_message_p message,
       return 8;
   }
 
-  return -CAN_USB_ERROR_CONVERT;
+  error_setf(&dev->error, CAN_USB_ERROR_CONVERT,
+    "Invalid SDO command: 0x%02x", message->content[0]);
+  return -dev->error.code;
 }
 
-int can_usb_to_epos(can_device_p dev, unsigned char* data, can_message_p
+int can_usb_to_epos(can_usb_device_t* dev, unsigned char* data, can_message_t*
     message) {
+  error_clear(&dev->error);
+  
   if ((data[2] == 0) && (data[3] == 0) && (data[4] == 0) && (data[5] == 0)) {
     switch (message->content[0]) {
       case CAN_CMD_SDO_WRITE_SEND_1_BYTE:
@@ -257,7 +278,9 @@ int can_usb_to_epos(can_device_p dev, unsigned char* data, can_message_p
         message->content[0] = CAN_CMD_SDO_READ_RECEIVE_UNDEFINED;
         break;
       default:
-        return -CAN_USB_ERROR_CONVERT;
+        error_setf(&dev->error, CAN_USB_ERROR_CONVERT,
+          "Invalid SDO command: 0x%02x", message->content[0]);
+        return dev->error.code;
     }
 
     message->content[1] = message->content[2];
@@ -283,90 +306,103 @@ int can_usb_to_epos(can_device_p dev, unsigned char* data, can_message_p
   }
   message->length = 8;
 
-  return CAN_USB_ERROR_NONE;
+  return dev->error.code;
 }
 
-int can_usb_send(can_device_p dev, unsigned char* data, size_t num) {
+int can_usb_send(can_usb_device_t* dev, unsigned char* data, size_t num) {
   unsigned char sync[] = {CAN_USB_SYNC_DLE, CAN_USB_SYNC_STX};
   unsigned char crc_value[2];
   int i;
 
-  if (!dev->comm_dev)
-    return -CAN_USB_ERROR_SEND;
-
+  error_clear(&dev->error);
+  
   can_usb_calc_crc(data, num, crc_value);
   data[num-2] = crc_value[0];
   data[num-1] = crc_value[1];
 
   can_usb_change_byte_order(data, num);
 
-  if (ftdi_write(dev->comm_dev, sync, sizeof(sync)) != sizeof(sync))
-    return -CAN_USB_ERROR_WRITE;
+  if (ftdi_device_write(dev->ftdi_dev, sync, sizeof(sync)) < 0) {
+    error_blame(&dev->error, &dev->ftdi_dev->error, CAN_USB_ERROR_SEND);
+    return -dev->error.code;
+  }
+  
   for (i = 0; i < num; ++i) {
-    if (ftdi_write(dev->comm_dev, &data[i], 1) != 1)
-      return -CAN_USB_ERROR_WRITE;
+    if (ftdi_device_write(dev->ftdi_dev, &data[i], 1) < 1) {
+      error_blame(&dev->error, &dev->ftdi_dev->error, CAN_USB_ERROR_SEND);
+      return -dev->error.code;
+    }
     if ((data[i] == CAN_USB_SYNC_DLE) &&
-        (ftdi_write(dev->comm_dev, &data[i], 1) != 1))
-      return -CAN_USB_ERROR_WRITE;
+        (ftdi_device_write(dev->ftdi_dev, &data[i], 1) < 1)) {
+      error_blame(&dev->error, &dev->ftdi_dev->error, CAN_USB_ERROR_SEND);
+      return -dev->error.code;
+    }
   }
   
   return num;
 }
 
-int can_usb_receive(can_device_p dev, unsigned char* data) {
+int can_usb_receive(can_usb_device_t* dev, unsigned char* data) {
   unsigned char sync[2], header[2], buffer, crc_value[2];
-  int i, num_recv = 0, num_exp = 0;
+  int i, result = 0, num_exp = 0;
 
-  if (!dev->comm_dev)
-    return -CAN_USB_ERROR_RECEIVE;
-
-  num_recv = ftdi_read(dev->comm_dev, sync, sizeof(sync));
-  if (num_recv == sizeof(sync)) {
-    if ((sync[0] != CAN_USB_SYNC_DLE) || (sync[1] != CAN_USB_SYNC_STX))
-      return -CAN_USB_ERROR_UNEXPECTED_RESPONSE;
-  }
-  else if (num_recv == 0)
-    return -CAN_USB_ERROR_NO_RESPONSE;
-  else
-    return -CAN_USB_ERROR_READ;
+  error_clear(&dev->error);
   
-  num_recv = ftdi_read(dev->comm_dev, header, sizeof(header));
-  if (num_recv == sizeof(header)) {
+  result = ftdi_device_read(dev->ftdi_dev, sync, sizeof(sync));
+  if (result > 0) {
+    if ((sync[0] != CAN_USB_SYNC_DLE) || (sync[1] != CAN_USB_SYNC_STX)) {
+      error_setf(&dev->error, CAN_USB_ERROR_RECEIVE,
+        "Unexpected response: 0x%02x 0x%02x", sync[0], sync[1]);
+      return -dev->error.code;
+    }
+  }
+  else {
+    error_blame(&dev->error, &dev->ftdi_dev->error, CAN_USB_ERROR_RECEIVE);
+    return -dev->error.code;
+  }
+  
+  result = ftdi_device_read(dev->ftdi_dev, header, sizeof(header));
+  if (result > 0) {
     data[0] = header[0];
     data[1] = header[1];
   }
-  else if (num_recv == 0)
-    return -CAN_USB_ERROR_NO_RESPONSE;
-  else
-    return -CAN_USB_ERROR_READ;
+  else {
+    error_blame(&dev->error, &dev->ftdi_dev->error, CAN_USB_ERROR_RECEIVE);
+    return -dev->error.code;
+  }
   
   num_exp = (data[1]+1)*sizeof(unsigned short);
   for (i = 0; i < num_exp; ++i) {
-    if (ftdi_read(dev->comm_dev, &buffer, 1) == 1)
+    if (ftdi_device_read(dev->ftdi_dev, &buffer, 1) > 0)
       data[i+2] = buffer;
-    else
-      break;
+    else {
+      error_blame(&dev->error, &dev->ftdi_dev->error, CAN_USB_ERROR_RECEIVE);
+      return -dev->error.code;
+    }
     
-    if ((buffer == CAN_USB_SYNC_DLE) &&
-        (ftdi_read(dev->comm_dev, &buffer, 1) != 1) &&
-        (buffer != CAN_USB_SYNC_DLE))
-      return -CAN_USB_ERROR_UNEXPECTED_RESPONSE;
+    if (buffer == CAN_USB_SYNC_DLE) {
+      unsigned char sync_dle;
+      if ((ftdi_device_read(dev->ftdi_dev, &sync_dle, 1) < 1) &&
+          (sync_dle != CAN_USB_SYNC_DLE)) {
+        error_setf(&dev->error, CAN_USB_ERROR_RECEIVE,
+          "Unexpected response: 0x%02x 0x%02x", buffer, sync_dle);
+        return -dev->error.code;
+      }
+    }
   }
-  if (i == 0)
-    return -CAN_USB_ERROR_NO_RESPONSE;
-  else if (i < num_exp)
-    return -CAN_USB_ERROR_UNEXPECTED_RESPONSE;
-  num_recv = i+2;
+  result = i+2;
 
-  can_usb_change_byte_order(data, num_recv);
+  can_usb_change_byte_order(data, result);
 
-  can_usb_calc_crc(data, num_recv, crc_value);
-  if ((crc_value[0] != 0x00) || (crc_value[1] != 0x00))
-    return -CAN_USB_ERROR_CRC;
+  can_usb_calc_crc(data, result, crc_value);
+  if ((crc_value[0] != 0x00) || (crc_value[1] != 0x00)) {
+    error_set(&dev->error, CAN_USB_ERROR_CRC);
+    return -dev->error.code;
+  }
 
-  can_usb_change_word_order(data, num_recv);
+  can_usb_change_word_order(data, result);
 
-  return num_recv;
+  return result;
 }
 
 size_t can_usb_change_byte_order(unsigned char* data, size_t num) {
@@ -440,4 +476,27 @@ unsigned short can_usb_crc_alg(unsigned short* data, size_t num) {
   }
 
   return crc;
+}
+
+int can_usb_device_init(can_usb_device_t* dev, const char* name) {
+  ftdi_context_init(ftdi_default_context);
+
+  dev->ftdi_dev = ftdi_context_match_name(ftdi_default_context, name);
+  error_init(&dev->error, can_usb_errors);
+  
+  if (!dev->ftdi_dev) {
+    ftdi_context_release(ftdi_default_context);
+    error_setf(&dev->error, CAN_USB_ERROR_DEVICE, name);
+  }
+  
+  return dev->error.code;
+}
+
+void can_usb_device_destroy(can_usb_device_t* dev) {
+  if (dev->ftdi_dev) {
+    dev->ftdi_dev = 0;
+    ftdi_context_release(ftdi_default_context);
+  }
+  
+  error_destroy(&dev->error);
 }

@@ -30,6 +30,8 @@
   *  RS232 serial connections to EPOS controllers.
   */
 
+#include <serial/serial.h>
+
 #include "can.h"
 
 /** \name Parameters
@@ -52,6 +54,10 @@
 #define CAN_SERIAL_OPCODE_RESPONSE              0x00
 #define CAN_SERIAL_OPCODE_READ                  0x10
 #define CAN_SERIAL_OPCODE_WRITE                 0x11
+#define CAN_SERIAL_OPCODE_READ_SEG_INIT         0x12
+#define CAN_SERIAL_OPCODE_WRITE_SEG_INIT        0x13
+#define CAN_SERIAL_OPCODE_READ_SEG              0x14
+#define CAN_SERIAL_OPCODE_WRITE_SEG             0x15
 //@}
 
 /** \name Acknowledges
@@ -67,19 +73,28 @@
   */
 //@{
 #define CAN_SERIAL_ERROR_NONE                   0
+//!< Success
 #define CAN_SERIAL_ERROR_CONVERT                1
+//!< CAN-Serial conversion error
 #define CAN_SERIAL_ERROR_SEND                   2
+//!< Failed to send to CAN-Serial device
 #define CAN_SERIAL_ERROR_RECEIVE                3
-#define CAN_SERIAL_ERROR_READ                   4
-#define CAN_SERIAL_ERROR_WRITE                  5
-#define CAN_SERIAL_ERROR_NO_RESPONSE            6
-#define CAN_SERIAL_ERROR_UNEXPECTED_RESPONSE    7
-#define CAN_SERIAL_ERROR_CRC                    8
+//!< Failed to receive from CAN-Serial device
+#define CAN_SERIAL_ERROR_CRC                    4
+//!< CAN-Serial checksum error
 //@}
 
 /** \brief Predefined CAN-Serial error descriptions
   */
 extern const char* can_serial_errors[];
+
+/** \brief CAN-Serial device structure
+  */
+typedef struct can_serial_device_t {
+  serial_device_t serial_dev;   //!< Serial device.
+  
+  error_t error;                //!< The most recent device error.
+} can_serial_device_t;
 
 /** \brief Convert a CANopen SDO message into serial data
   * \note This conversion translates CANopen SDO messages into the EPOS
@@ -90,9 +105,9 @@ extern const char* can_serial_errors[];
   * \return The number of bytes in the serial data frame to be sent or the
   *   negative error code.
   */
-int can_serial_from_epos(
-  can_device_p dev,
-  can_message_p message,
+int can_serial_device_from_epos(
+  can_serial_device_t* dev,
+  const can_message_t* message,
   unsigned char* data);
 
 /** \brief Convert serial data to a CANopen SDO message
@@ -101,12 +116,12 @@ int can_serial_from_epos(
   * \param[in] dev The receiving CAN device for which to convert the message.
   * \param[in] data The serial data frame to be converted.
   * \param[in,out] message The converted CANopen SDO message.
-  * \return The resulting negative error code.
+  * \return The resulting error code.
   */
-int can_serial_to_epos(
-  can_device_p dev,
+int can_serial_device_to_epos(
+  can_serial_device_t* dev,
   unsigned char* data,
-  can_message_p message);
+  can_message_t* message);
 
 /** \brief Send serial data to a CAN device
   * \param[in] dev The open CAN-Serial device to send data to.
@@ -116,8 +131,8 @@ int can_serial_to_epos(
   * \return The number of bytes sent to the CAN-Serial device or the
   *   negative error code.
   */
-int can_serial_send(
-  can_device_p dev,
+int can_serial_device_send(
+  can_serial_device_t* dev,
   unsigned char* data,
   size_t num);
 
@@ -128,8 +143,8 @@ int can_serial_send(
   * \return The number of bytes received from the CAN-Serial device or the
   *   negative error code.
   */
-int can_serial_receive(
-  can_device_p dev,
+int can_serial_device_receive(
+  can_serial_device_t* dev,
   unsigned char* data);
 
 /** \brief Change the order of bytes in serial data frames

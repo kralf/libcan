@@ -18,60 +18,69 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include <string.h>
+#include "string/string.h"
 
 #include "can.h"
 
 const char* can_errors[] = {
   "Success",
-  "Configuration error",
-  "Error opening CAN device",
-  "Error setting CAN device parameters",
-  "Error closing CAN device",
-  "Error sending CAN message",
-  "Error receiving CAN message",
+  "CAN configuration error",
+  "Failed to open CAN device",
+  "Failed to set CAN device parameters",
+  "Failed to close CAN device",
+  "Failed to send CAN message",
+  "Failed to receive CAN message",
 };
 
-void can_init(can_device_p dev) {
-  can_init_config(dev, &can_default_config);  
-}
-
-int can_init_config(can_device_p dev, config_p config) {
+void can_device_init(can_device_t* dev) {
   dev->comm_dev = 0;
   
   dev->num_references = 0;
   dev->num_sent = 0;
   dev->num_received = 0;
   
-  config_init_copy(&dev->config, &can_default_config);
-  if ((config != &can_default_config) && config_set(&dev->config, config))
-    return CAN_ERROR_CONFIG;
-
-  return CAN_ERROR_NONE;
+  config_init_default(&dev->config, &can_default_config);
+  error_init(&dev->error, can_errors);
 }
 
-int can_init_config_parse(can_device_p dev, config_parser_p parser,
+int can_device_init_config(can_device_t* dev, const config_t* config) {
+  can_device_init(dev);
+  
+  if (config_set(&dev->config, config))
+    error_blame(&dev->error, &dev->config.error, CAN_ERROR_CONFIG);
+
+  return dev->error.code;
+}
+
+int can_device_init_config_parse(can_device_t* dev, config_parser_t* parser,
     const char* option_group, int argc, char **argv, config_parser_exit_t
     exit) {
-  char summary[sizeof(((config_parser_option_group_p)0)->summary)];
-  char description[sizeof(((config_parser_option_group_p)0)->description)];
+  char* summary = 0;
+  char* description = 0;
   
-  sprintf(summary, "%s options", can_device_name);
-  sprintf(description,
+  string_printf(&summary, "%s options", can_device_name);
+  string_printf(&description,
     "These options control the settings for the %s communication interface. "
     "The type of interface depends on the momentarily selected alternative "
     "of the underlying CANopen library. Use the update-alternatives command "
     "to inspect or change this alternative.", can_device_name);
-  config_p config = &config_parser_add_option_group(parser,
+  config_t* config = &config_parser_add_option_group(parser,
     option_group ? option_group : CAN_CONFIG_PARSER_OPTION_GROUP,
     &can_default_config, summary, description)->options;
+
+  string_destroy(&summary);
+  string_destroy(&description);
   
-  if (config_parser_parse(parser, argc, argv, exit))
-    return CAN_ERROR_CONFIG;
-  
-  return can_init_config(dev, config);
+  int result;
+  if ((result = config_parser_parse(parser, argc, argv, exit))) {
+    error_blame(&dev->error, &parser->error, CAN_ERROR_CONFIG);
+    return dev->error.code;
+  }
+
+  return can_device_init_config(dev, config);
 }
 
-void can_destroy(can_device_p dev) {
+void can_device_destroy(can_device_t* dev) {
   config_destroy(&dev->config);
+  error_destroy(&dev->error);
 }

@@ -30,6 +30,8 @@
   *  FTDI serial connections over USB links to EPOS controllers.
   */
 
+#include <ftdi/ftdi.h>
+
 #include "can.h"
 
 /** \name Parameters
@@ -70,19 +72,30 @@
   */
 //@{
 #define CAN_USB_ERROR_NONE                 0
-#define CAN_USB_ERROR_CONVERT              1
-#define CAN_USB_ERROR_SEND                 2
-#define CAN_USB_ERROR_RECEIVE              3
-#define CAN_USB_ERROR_READ                 4
-#define CAN_USB_ERROR_WRITE                5
-#define CAN_USB_ERROR_NO_RESPONSE          6
-#define CAN_USB_ERROR_UNEXPECTED_RESPONSE  7
-#define CAN_USB_ERROR_CRC                  8
+//!< Success
+#define CAN_USB_ERROR_DEVICE               1
+//!< No such CAN-USB device
+#define CAN_USB_ERROR_CONVERT              2
+//!< CAN-USB conversion error
+#define CAN_USB_ERROR_SEND                 3
+//!< Failed to send to CAN-USB device
+#define CAN_USB_ERROR_RECEIVE              4
+//!< Failed to receive from CAN-USB device
+#define CAN_USB_ERROR_CRC                  5
+//!< CAN-USB checksum error
 //@}
 
 /** \brief Predefined CAN-USB error descriptions
   */
 extern const char* can_usb_errors[];
+
+/** \brief CAN-USB device structure
+  */
+typedef struct can_usb_device_t {
+  ftdi_device_t* ftdi_dev;      //!< FTDI device.
+  
+  error_t error;                //!< The most recent device error.
+} can_usb_device_t;
 
 /** \brief Convert a CANopen SDO message into USB data
   * \note This conversion translates CANopen SDO messages into the EPOS
@@ -93,9 +106,9 @@ extern const char* can_usb_errors[];
   * \return The number of bytes in the USB data frame to be sent or the
   *   negative error code.
   */
-int can_usb_from_epos(
-  can_device_p dev,
-  can_message_p message,
+int can_usb_device_from_epos(
+  can_usb_device_t* dev,
+  const can_message_t* message,
   unsigned char* data);
 
 /** \brief Convert USB data to a CANopen SDO message
@@ -106,10 +119,10 @@ int can_usb_from_epos(
   * \param[in,out] message The converted CANopen SDO message.
   * \return The resulting negative error code.
   */
-int can_usb_to_epos(
-  can_device_p dev,
+int can_usb_device_to_epos(
+  can_usb_device_t* dev,
   unsigned char* data,
-  can_message_p message);
+  can_message_t* message);
 
 /** \brief Send USB data to a CAN device
   * \param[in] dev The open CAN-USB device to send data to.
@@ -119,8 +132,8 @@ int can_usb_to_epos(
   * \return The number of bytes sent to the CAN-USB device or the
   *   negative error code.
   */
-int can_usb_send(
-  can_device_p dev,
+int can_usb_device_send(
+  can_usb_device_t* dev,
   unsigned char* data,
   size_t num);
 
@@ -131,8 +144,8 @@ int can_usb_send(
   * \return The number of bytes received from the CAN-USB device or the
   *   negative error code.
   */
-int can_usb_receive(
-  can_device_p dev,
+int can_usb_device_receive(
+  can_usb_device_t* dev,
   unsigned char* data);
 
 /** \brief Change the order of bytes in USB data frames
