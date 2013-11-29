@@ -174,7 +174,7 @@ int can_device_init_config_parse(
 /** \brief Destroy an existing CAN device
   * \param[in] dev The CAN device to be destroyed.
   */
-void can_destroy(
+void can_device_destroy(
   can_device_t* dev);
 
 /** \brief Open CAN communication

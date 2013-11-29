@@ -99,22 +99,31 @@ const config_default_t can_default_config = {
 int can_usb_device_init(can_usb_device_t* dev, const char* name);
 void can_usb_device_destroy(can_usb_device_t* dev);
 
-int can_open(can_device_t* dev) {
+int can_device_open(can_device_t* dev) {
   error_clear(&dev->error);
     
   if (!dev->num_references) {
     dev->comm_dev = malloc(sizeof(can_usb_device_t));
-    int result = can_usb_device_init(dev->comm_dev,
-      config_get_string(&dev->config, CAN_USB_PARAMETER_DEVICE));
-    
+
     dev->num_sent = 0;
     dev->num_received = 0;
 
-    ftdi_device_t* ftdi_dev = ((can_usb_device_t*)dev->comm_dev)->ftdi_dev;
-    if (result ||
-      ftdi_device_open(dev->comm_dev,
+    can_usb_device_t* usb_dev = (can_usb_device_t*)dev->comm_dev;
+    if (can_usb_device_init(dev->comm_dev,
+        config_get_string(&dev->config, CAN_USB_PARAMETER_DEVICE))) {
+      error_blame(&dev->error, &usb_dev->error, CAN_ERROR_OPEN);
+    
+      can_usb_device_destroy(dev->comm_dev);
+      
+      free(dev->comm_dev);
+      dev->comm_dev = 0;
+      
+      return dev->error.code;
+    }
+    
+    if (ftdi_device_open(usb_dev->ftdi_dev,
         config_get_int(&dev->config, CAN_USB_PARAMETER_INTERFACE)) ||
-      ftdi_device_setup(dev->comm_dev,
+      ftdi_device_setup(usb_dev->ftdi_dev,
         config_get_int(&dev->config, CAN_USB_PARAMETER_BAUD_RATE),
         config_get_int(&dev->config, CAN_USB_PARAMETER_DATA_BITS),
         config_get_int(&dev->config, CAN_USB_PARAMETER_STOP_BITS),
@@ -123,7 +132,7 @@ int can_open(can_device_t* dev) {
         config_get_int(&dev->config, CAN_USB_PARAMETER_BREAK),
         config_get_float(&dev->config, CAN_USB_PARAMETER_TIMEOUT),
         config_get_float(&dev->config, CAN_USB_PARAMETER_LATENCY))) {
-      error_blame(&dev->error, &ftdi_dev->error, CAN_ERROR_OPEN);
+      error_blame(&dev->error, &usb_dev->ftdi_dev->error, CAN_ERROR_OPEN);
       
       can_usb_device_destroy(dev->comm_dev);
       
@@ -138,7 +147,7 @@ int can_open(can_device_t* dev) {
   return dev->error.code;
 }
 
-int can_close(can_device_t* dev) {
+int can_device_close(can_device_t* dev) {
   error_clear(&dev->error);
   
   if (dev->num_references) {
@@ -163,7 +172,7 @@ int can_close(can_device_t* dev) {
   return dev->error.code;
 }
 
-int can_send_message(can_device_t* dev, const can_message_t* message) {
+int can_device_send_message(can_device_t* dev, const can_message_t* message) {
   unsigned char data[64];
   
   error_clear(&dev->error);
@@ -180,7 +189,7 @@ int can_send_message(can_device_t* dev, const can_message_t* message) {
   return dev->error.code;
 }
 
-int can_receive_message(can_device_t* dev, can_message_t* message) {
+int can_device_receive_message(can_device_t* dev, can_message_t* message) {
   unsigned char data[64];
 
   error_clear(&dev->error);
@@ -195,8 +204,8 @@ int can_receive_message(can_device_t* dev, can_message_t* message) {
   return dev->error.code;
 }
 
-int can_usb_from_epos(can_usb_device_t* dev, const can_message_t* message,
-    unsigned char* data) {
+int can_usb_device_from_epos(can_usb_device_t* dev, const can_message_t*
+    message, unsigned char* data) {
   error_clear(&dev->error);
   
   switch (message->content[0]) {
@@ -259,8 +268,8 @@ int can_usb_from_epos(can_usb_device_t* dev, const can_message_t* message,
   return -dev->error.code;
 }
 
-int can_usb_to_epos(can_usb_device_t* dev, unsigned char* data, can_message_t*
-    message) {
+int can_usb_device_to_epos(can_usb_device_t* dev, unsigned char* data,
+    can_message_t* message) {
   error_clear(&dev->error);
   
   if ((data[2] == 0) && (data[3] == 0) && (data[4] == 0) && (data[5] == 0)) {
@@ -309,7 +318,8 @@ int can_usb_to_epos(can_usb_device_t* dev, unsigned char* data, can_message_t*
   return dev->error.code;
 }
 
-int can_usb_send(can_usb_device_t* dev, unsigned char* data, size_t num) {
+int can_usb_device_send(can_usb_device_t* dev, unsigned char* data,
+    size_t num) {
   unsigned char sync[] = {CAN_USB_SYNC_DLE, CAN_USB_SYNC_STX};
   unsigned char crc_value[2];
   int i;
@@ -342,7 +352,7 @@ int can_usb_send(can_usb_device_t* dev, unsigned char* data, size_t num) {
   return num;
 }
 
-int can_usb_receive(can_usb_device_t* dev, unsigned char* data) {
+int can_usb_device_receive(can_usb_device_t* dev, unsigned char* data) {
   unsigned char sync[2], header[2], buffer, crc_value[2];
   int i, result = 0, num_exp = 0;
 

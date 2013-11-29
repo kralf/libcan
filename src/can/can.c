@@ -58,26 +58,28 @@ int can_device_init_config_parse(can_device_t* dev, config_parser_t* parser,
   char* summary = 0;
   char* description = 0;
   
+  can_device_init(dev);
+  
+   option_group = option_group ? option_group : CAN_CONFIG_PARSER_OPTION_GROUP;
   string_printf(&summary, "%s options", can_device_name);
   string_printf(&description,
     "These options control the settings for the %s communication interface. "
     "The type of interface depends on the momentarily selected alternative "
     "of the underlying CANopen library. Use the update-alternatives command "
     "to inspect or change this alternative.", can_device_name);
-  config_t* config = &config_parser_add_option_group(parser,
-    option_group ? option_group : CAN_CONFIG_PARSER_OPTION_GROUP,
-    &can_default_config, summary, description)->options;
+  config_parser_add_option_group(parser, option_group, &can_default_config,
+    summary, description);
 
   string_destroy(&summary);
   string_destroy(&description);
   
-  int result;
-  if ((result = config_parser_parse(parser, argc, argv, exit))) {
+  if (config_parser_parse(parser, argc, argv, exit))
     error_blame(&dev->error, &parser->error, CAN_ERROR_CONFIG);
-    return dev->error.code;
-  }
+  else if (config_set(&dev->config, &config_parser_get_option_group(
+      parser, option_group)->options))
+    error_blame(&dev->error, &dev->config.error, CAN_ERROR_CONFIG);
 
-  return can_device_init_config(dev, config);
+  return dev->error.code;
 }
 
 void can_device_destroy(can_device_t* dev) {
