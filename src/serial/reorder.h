@@ -18,42 +18,46 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#ifndef CAN_SERIAL_REORDER_H
+#define CAN_SERIAL_REORDER_H
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
+/** \file serial/reorder.h
+  * \ingroup can_serial
+  * \brief CAN-Serial data reordering helpers
+  * \author Marc Rauer, Ralf Kaestner
+  *
+  * This file provides an interface for reordering the serial data frames to
+  * be transferred over RS232 serial connections to maxon EPOS controllers.
+  */
+
+#include <stdlib.h>
+
+/** \brief Change the order of bytes in serial data frames
+  * \param[in,out] data An array of bytes representing the serial data frame
+  *   for which to change the order.
+  * \param[in] num The number of bytes in the array.
+  * \return The number of reordered bytes within the serial data frame.
   * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
+  * The first two characters will be ignored, the following characters
+  * will be reordered. This is necessary according to the EPOS Communication
+  * Guide.
   */
+size_t can_serial_reorder_bytes(
+  unsigned char* data,
+  size_t num);
 
-/** \file can.h
-  * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
-  * \author Ralf Kaestner
+/** \brief Change the order of words in serial data frames
+  * \param[in,out] data An array of words representing the serial data for
+  *   which to change order.
+  * \param[in] num The number of bytes in the word array.
+  * \return The number of reordered bytes within the serial data frame.
   * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
+  * The first two characters will be ignored, the following characters
+  * will be reordered in groups of two. This is necessary according to the
+  * EPOS Communication Guide.
   */
-
-#include "device.h"
-#include "message.h"
-
-#include "emcy.h"
-#include "sdo.h"
-
-/** \brief Predefined CAN configuration parser option group
-  */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
-
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+size_t can_serial_reorder_words(
+  unsigned char* data,
+  size_t num);
 
 #endif

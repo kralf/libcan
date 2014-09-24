@@ -18,42 +18,28 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#ifndef CAN_DIRECTION_H
+#define CAN_DIRECTION_H
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
-
-/** \file can.h
+/** \file direction.h
   * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
+  * \brief CANopen communication directions
   * \author Ralf Kaestner
   * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
+  * This header specifies the available directions of CANopen communication.
   */
 
-#include "device.h"
-#include "message.h"
-
-#include "emcy.h"
-#include "sdo.h"
-
-/** \brief Predefined CAN configuration parser option group
+/** \brief CANopen communication directions
+  * 
+  * In CANopen terminology, communication is viewed from the service server,
+  * so that sending results in a message being received by the service client
+  * and receiving results from a message being sent by the service client.
   */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
-
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+typedef enum {
+  can_direction_send,
+  //!< Outbound (sending) CANopen communication.
+  can_direction_receive,
+  //!< Inbound (receiving) CANopen communication.
+} can_direction_t;
 
 #endif

@@ -18,42 +18,28 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#ifndef CAN_NMT_EC_H
+#define CAN_NMT_EC_H
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
-
-/** \file can.h
+/** \file nmt_ec.h
   * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
+  * \brief CANopen Network Management Error Control (NMT-EC) protocol
   * \author Ralf Kaestner
   * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
+  * The NMT-EC protocol is used to detect remote device bootups and error
+  * conditions.
   */
 
-#include "device.h"
-#include "message.h"
+#include "cob.h"
 
-#include "emcy.h"
-#include "sdo.h"
-
-/** \brief Predefined CAN configuration parser option group
+/** \brief Retrieve state of an NMT-EC communication object
+  * \param[in] cob The NMT-EC communication object to retrieve the state
+  *   for.
+  * \return The state of the provided NMT-EC communication object or zero
+  *   if the provided communication object is not an NMT-EC communication
+  *   object.
   */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
-
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+unsigned char can_nmt_ec_get_cob_state(
+  const can_cob_t* cob);
 
 #endif

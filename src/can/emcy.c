@@ -18,42 +18,25 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
-
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
-
-/** \file can.h
-  * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
-  * \author Ralf Kaestner
-  * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
-  */
-
-#include "device.h"
-#include "message.h"
-
 #include "emcy.h"
-#include "sdo.h"
 
-/** \brief Predefined CAN configuration parser option group
-  */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
+unsigned short can_emcy_get_cob_error_code(const can_cob_t* cob) {
+  if (cob->protocol == can_protocol_emcy)
+    return (cob->data[0] << 8)+cob->data[1];
+  else
+    return 0;
+}
 
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+unsigned char can_emcy_get_cob_error_register(const can_cob_t* cob) {
+  if (cob->protocol == can_protocol_emcy)
+    return cob->data[2];
+  else
+    return 0;
+}
 
-#endif
+const unsigned char* can_emcy_get_cob_vendor_code(const can_cob_t* cob) {
+  if (cob->protocol == can_protocol_emcy)
+    return &cob->data[3];
+  else
+    return 0;
+}

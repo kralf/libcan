@@ -18,42 +18,24 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#ifndef CAN_CPC_H
+#define CAN_CPC_H
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
+/** \defgroup can_cpc CANopen Communication over CAN-CPC Devices
+  * \brief Library functions for CANopen communication over CAN-CPC devices
   * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
+  * The CAN-CPC communication back-end implements the generic CANopen
+  * device interface for CAN-CPC hardware.
   */
 
-/** \file can.h
-  * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
+/** \file cpc/cpc.h
+  * \ingroup can_cpc
+  * \brief CAN-CPC module includes
   * \author Ralf Kaestner
   * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
+  * This header includes the essential headers of the CAN-CPC module.
   */
 
-#include "device.h"
-#include "message.h"
-
-#include "emcy.h"
-#include "sdo.h"
-
-/** \brief Predefined CAN configuration parser option group
-  */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
-
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+#include "cpc/device.h"
 
 #endif

@@ -18,42 +18,34 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#include <string.h>
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
-
-/** \file can.h
-  * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
-  * \author Ralf Kaestner
-  * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
-  */
-
-#include "device.h"
 #include "message.h"
 
-#include "emcy.h"
-#include "sdo.h"
+void can_message_init(can_message_t* message, unsigned short id,
+    unsigned char rtr, const unsigned char* data, size_t data_length) {
+  message->id = id;
+  message->rtr = rtr;
+  
+  if (data_length > sizeof(message->data))
+    data_length = sizeof(message->data);  
+  memcpy(message->data, data, data_length);
+  if (data_length < sizeof(message->data))
+    memset(&message->data[data_length], 0, sizeof(message->data)-data_length);
+  message->data_length = data_length;
+}
 
-/** \brief Predefined CAN configuration parser option group
-  */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
-
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
-
-#endif
+void can_message_print(FILE* stream, const can_message_t* message) {
+  fprintf(stream, "ID %03x RTR %1d: ", message->id, message->rtr);
+  
+  if (message->data_length) {
+    size_t i;
+    for (i = 0; i < message->data_length; ++i) {
+      if (!i)
+        fprintf(stream, "Data");
+      fprintf(stream, " %02x", message->data[i]);
+    }
+  }
+  else
+    fprintf(stream, "No data");
+}

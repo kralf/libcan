@@ -18,42 +18,51 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#ifndef CAN_NMT_H
+#define CAN_NMT_H
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
-
-/** \file can.h
+/** \file nmt.h
   * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
+  * \brief CANopen Network Management (NMT) protocol
   * \author Ralf Kaestner
   * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
+  * The NMT protocol is used to issue state machine change commands, e.g.,
+  * to start, stop, initalize, and reset the devices.
   */
 
-#include "device.h"
-#include "message.h"
+#include "cob.h"
 
-#include "emcy.h"
-#include "sdo.h"
-
-/** \brief Predefined CAN configuration parser option group
+/** \brief Initialize CANopen NMT communication object
+  * \param[in] cob The CANopen NMT communication object to be initialized.
+  * \param[in] cs The command specifier of the NMT communication object.
+  * \param[in] node_id The node identifier of the NMT communication object.
+  * 
+  * This initializer calls can_cob_init() with the data field constructed
+  * according to the CANopen NMT protocol.
   */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
+void can_nmt_init_cob(
+  can_cob_t* cob,
+  unsigned char cs,
+  unsigned char node_id);
 
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
+/** \brief Retrieve command specifier of an NMT communication object
+  * \param[in] cob The NMT communication object to retrieve the command
+  *   specifier for.
+  * \return The command specifier of the provided NMT communication object or
+  *   zero if the provided communication object is not an NMT communication
+  *   object.
   */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+unsigned char can_nmt_get_cob_cs(
+  const can_cob_t* cob);
+
+/** \brief Retrieve node identifier of an NMT communication object
+  * \param[in] cob The NMT communication object to retrieve the node
+  *   identifier for.
+  * \return The node identifier of the provided NMT communication object or
+  *   zero if the provided communication object is not an NMT communication
+  *   object.
+  */
+unsigned char can_nmt_get_cob_node_id(
+  const can_cob_t* cob);
 
 #endif

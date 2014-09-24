@@ -18,42 +18,42 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#include "crc.h"
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
+size_t can_serial_crc(unsigned char* data, size_t num, unsigned char*
+    crc_value) {
+  unsigned short* word_data = (unsigned short*)data;
+  size_t num_words = num/2;
+  unsigned short crc;
 
-/** \file can.h
-  * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
-  * \author Ralf Kaestner
-  * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
-  */
+  crc = can_serial_crc_ccitt(word_data, num_words);
+  crc_value[0] = (crc >> 8);
+  crc_value[1] = crc;
 
-#include "device.h"
-#include "message.h"
+  return num_words;
+}
 
-#include "emcy.h"
-#include "sdo.h"
+unsigned short can_serial_crc_ccitt(unsigned short* data, size_t num) {
+  unsigned short shift, c, carry, crc = 0;
+  int i;
 
-/** \brief Predefined CAN configuration parser option group
-  */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
+  for (i = 0; i < num; ++i) {
+    shift = 0x8000;
+    c = (data[i] << 8) | (data[i] >> 8);
 
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+    do {
+      carry = crc & 0x8000;
+      crc <<= 1;
 
-#endif
+      if (c & shift)
+        ++crc;
+      if (carry)
+        crc ^= 0x1021;
+
+      shift >>= 1;
+    }
+    while (shift);
+  }
+
+  return crc;
+}

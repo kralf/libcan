@@ -18,42 +18,25 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#ifndef CAN_SERIAL_H
+#define CAN_SERIAL_H
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
+/** \defgroup can_serial CANopen Communication over RS232 Serial Connections
+  * \brief Library functions for CANopen communication over RS232 serial
+  *   connections
   * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
+  * The CAN-Serial communication back-end implements the generic CANopen
+  * device interface for RS232 serial connections to maxon EPOS controllers.
   */
 
-/** \file can.h
-  * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
+/** \file serial/serial.h
+  * \ingroup can_serial
+  * \brief CAN-Serial module includes
   * \author Ralf Kaestner
   * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
+  * This header includes the essential headers of the CAN-Serial module.
   */
 
-#include "device.h"
-#include "message.h"
-
-#include "emcy.h"
-#include "sdo.h"
-
-/** \brief Predefined CAN configuration parser option group
-  */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
-
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+#include "serial/device.h"
 
 #endif

@@ -23,7 +23,10 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "can_serial.h"
+#include "device.h"
+
+#include "reorder.h"
+#include "crc.h"
 
 const char* can_serial_errors[] = {
   "Success",
@@ -35,47 +38,47 @@ const char* can_serial_errors[] = {
 
 const char* can_device_name = "CAN-Serial";
 
-config_param_t can_serial_default_params[] = {
-  {CAN_SERIAL_PARAMETER_DEVICE,
+config_param_t can_serial_device_default_params[] = {
+  {CAN_SERIAL_DEVICE_PARAMETER_NAME,
     config_param_type_string,
     "/dev/ttyS0",
     "",
     "Path to the special file of the connected CAN-Serial device"},
-  {CAN_SERIAL_PARAMETER_BAUD_RATE,
+  {CAN_SERIAL_DEVICE_PARAMETER_BAUD_RATE,
     config_param_type_int,
     "38400",
     "[50, 230400]",
     "The requested baud rate of the CAN-Serial device in [baud]"},
-  {CAN_SERIAL_PARAMETER_DATA_BITS,
+  {CAN_SERIAL_DEVICE_PARAMETER_DATA_BITS,
     config_param_type_int,
     "8",
     "[5, 8]",
     "The requested number of data bits of the CAN-Serial device"},
-  {CAN_SERIAL_PARAMETER_STOP_BITS,
+  {CAN_SERIAL_DEVICE_PARAMETER_STOP_BITS,
     config_param_type_int,
     "1",
     "[1, 2]",
     "The requested number of stop bits of the CAN-Serial device"},
-  {CAN_SERIAL_PARAMETER_PARITY,
+  {CAN_SERIAL_DEVICE_PARAMETER_PARITY,
     config_param_type_enum,
     "none",
     "none|odd|even",
     "The requested parity setting of the CAN-Serial device"},
-  {CAN_SERIAL_PARAMETER_FLOW_CTRL,
+  {CAN_SERIAL_DEVICE_PARAMETER_FLOW_CTRL,
     config_param_type_enum,
     "off",
     "off|xon_xoff|rts_cts",
     "The requested flow control setting of the CAN-Serial device"},
-  {CAN_SERIAL_PARAMETER_TIMEOUT,
+  {CAN_SERIAL_DEVICE_PARAMETER_TIMEOUT,
     config_param_type_float,
     "0.01",
     "",
     "The CAN-Serial communication timeout in [s]"},
 };
 
-const config_default_t can_default_config = {
-  can_serial_default_params,
-  sizeof(can_serial_default_params)/sizeof(config_param_t),
+const config_default_t can_device_default_config = {
+  can_serial_device_default_params,
+  sizeof(can_serial_device_default_params)/sizeof(config_param_t),
 };
 
 void can_serial_device_init(can_serial_device_t* dev, const char* name);
@@ -87,7 +90,7 @@ int can_device_open(can_device_t* dev) {
   if (!dev->num_references) {
     dev->comm_dev = malloc(sizeof(can_serial_device_t));
     can_serial_device_init(dev->comm_dev,
-      config_get_string(&dev->config, CAN_SERIAL_PARAMETER_DEVICE));
+      config_get_string(&dev->config, CAN_SERIAL_DEVICE_PARAMETER_NAME));
     
     dev->num_sent = 0;
     dev->num_received = 0;
@@ -96,13 +99,13 @@ int can_device_open(can_device_t* dev) {
       &((can_serial_device_t*)dev->comm_dev)->serial_dev;
     if (serial_device_open(serial_dev) ||
       serial_device_setup(serial_dev,
-        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_BAUD_RATE),
-        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_DATA_BITS),
-        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_STOP_BITS),
-        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_PARITY),
-        config_get_int(&dev->config, CAN_SERIAL_PARAMETER_FLOW_CTRL),
-        config_get_float(&dev->config, CAN_SERIAL_PARAMETER_TIMEOUT))) {
-      error_blame(&dev->error, &serial_dev->error, CAN_ERROR_OPEN);
+        config_get_int(&dev->config, CAN_SERIAL_DEVICE_PARAMETER_BAUD_RATE),
+        config_get_int(&dev->config, CAN_SERIAL_DEVICE_PARAMETER_DATA_BITS),
+        config_get_int(&dev->config, CAN_SERIAL_DEVICE_PARAMETER_STOP_BITS),
+        config_get_int(&dev->config, CAN_SERIAL_DEVICE_PARAMETER_PARITY),
+        config_get_int(&dev->config, CAN_SERIAL_DEVICE_PARAMETER_FLOW_CTRL),
+        config_get_float(&dev->config, CAN_SERIAL_DEVICE_PARAMETER_TIMEOUT))) {
+      error_blame(&dev->error, &serial_dev->error, CAN_DEVICE_ERROR_OPEN);
 
       can_serial_device_destroy(dev->comm_dev);
     
@@ -134,11 +137,12 @@ int can_device_close(can_device_t* dev) {
         dev->comm_dev = 0;
       }
       else
-        error_blame(&dev->error, &serial_dev->error, CAN_ERROR_CLOSE);
+        error_blame(&dev->error, &serial_dev->error, CAN_DEVICE_ERROR_CLOSE);
     }
   }
   else
-    error_setf(&dev->error, CAN_ERROR_CLOSE, "Non-zero reference count");
+    error_setf(&dev->error, CAN_DEVICE_ERROR_CLOSE,
+      "Non-zero reference count");
   
   return dev->error.code;
 }
@@ -149,11 +153,11 @@ int can_device_send_message(can_device_t* dev, const can_message_t* message) {
   error_clear(&dev->error);
 
   int result;
-  if (((result = can_serial_device_from_epos(dev->comm_dev,
-        message, data)) < 0) ||
+  if (((result = can_serial_device_from_message(dev->comm_dev,
+        &dev->connection_set, message, data)) < 0) ||
       (can_serial_device_send(dev->comm_dev, data, result) < 0))
     error_blame(&dev->error, &((can_serial_device_t*)dev->comm_dev)->error,
-      CAN_ERROR_SEND);
+      CAN_DEVICE_ERROR_SEND);
   else
     ++dev->num_sent;
 
@@ -166,76 +170,130 @@ int can_device_receive_message(can_device_t* dev, can_message_t* message) {
   error_clear(&dev->error);
   
   if ((can_serial_device_receive(dev->comm_dev, data) < 0) ||
-      can_serial_device_to_epos(dev->comm_dev, data, message))
+    can_serial_device_to_message(dev->comm_dev, &dev->connection_set,
+      data, message))
     error_blame(&dev->error, &((can_serial_device_t*)dev->comm_dev)->error,
-      CAN_ERROR_RECEIVE);
+      CAN_DEVICE_ERROR_RECEIVE);
   else
     ++dev->num_received;
   
   return dev->error.code;
 }
 
-int can_serial_device_from_epos(can_serial_device_t* dev, const can_message_t*
-    message, unsigned char* data) {
+int can_serial_device_from_message(can_serial_device_t* dev, const
+    can_connection_set_t* connection_set, const can_message_t* message,
+    unsigned char* data) {
   error_clear(&dev->error);
   
-  switch (message->content[0]) {
-    case CAN_CMD_SDO_WRITE_SEND_1_BYTE:
-      data[0] = CAN_SERIAL_OPCODE_WRITE;
-      data[1] = 0x02;
-      data[2] = message->content[2];
-      data[3] = message->content[1];
-      data[4] = message->id;
-      data[5] = message->content[3];
-      data[6] = message->content[5];
-      data[7] = message->content[4];
-      data[8] = 0x00;
-      data[9] = 0x00;
-      return 10;
-    case CAN_CMD_SDO_WRITE_SEND_2_BYTE:
-      data[0] = CAN_SERIAL_OPCODE_WRITE;
-      data[1] = 0x02;
-      data[2] = message->content[2];
-      data[3] = message->content[1];
-      data[4] = message->id;
-      data[5] = message->content[3];
-      data[6] = message->content[5];
-      data[7] = message->content[4];
-      data[8] = 0x00;
-      data[9] = 0x00;
-      return 10;
-    case CAN_CMD_SDO_WRITE_SEND_4_BYTE:
-      data[0] = CAN_SERIAL_OPCODE_WRITE;
-      data[1] = 0x03;
-      data[2] = message->content[2];
-      data[3] = message->content[1];
-      data[4] = message->id;
-      data[5] = message->content[3];
-      data[6] = message->content[5];
-      data[7] = message->content[4];
-      data[8] = message->content[7];
-      data[9] = message->content[6];
-      data[10] = 0x00;
-      data[11] = 0x00;
-      return 12;
-    case CAN_CMD_SDO_READ_SEND:
-      data[0] = CAN_SERIAL_OPCODE_READ;
-      data[1] = 0x01;
-      data[2] = message->content[2];
-      data[3] = message->content[1];
-      data[4] = message->id;
-      data[5] = message->content[3];
-      data[6] = 0x00;
-      data[7] = 0x00;
-      return 8;
+  ssize_t result = can_connection_set_find_cob_id(connection_set,
+    message->id);
+  
+  if (result >= 0) {
+    if (message->protocol == can_message_protocol_sdo) {
+      can_sdo_css_t css = can_sdo_get_message_css(message);
+      
+      switch (css) {
+        case CAN_CMD_SDO_WRITE_SEND_1_BYTE:
+          data[0] = CAN_SERIAL_DEVICE_OPCODE_WRITE;
+          data[1] = 0x02;
+          data[2] = message->content[2];
+          data[3] = message->content[1];
+          data[4] = message->id;
+          data[5] = message->content[3];
+          data[6] = message->content[5];
+          data[7] = message->content[4];
+          data[8] = 0x00;
+          data[9] = 0x00;
+          return 10;
+        case CAN_CMD_SDO_WRITE_SEND_2_BYTE:
+          data[0] = CAN_SERIAL_DEVICE_OPCODE_WRITE;
+          data[1] = 0x02;
+          data[2] = message->content[2];
+          data[3] = message->content[1];
+          data[4] = message->id;
+          data[5] = message->content[3];
+          data[6] = message->content[5];
+          data[7] = message->content[4];
+          data[8] = 0x00;
+          data[9] = 0x00;
+          return 10;
+        case CAN_CMD_SDO_WRITE_SEND_4_BYTE:
+          data[0] = CAN_SERIAL_DEVICE_OPCODE_WRITE;
+          data[1] = 0x03;
+          data[2] = message->content[2];
+          data[3] = message->content[1];
+          data[4] = message->id;
+          data[5] = message->content[3];
+          data[6] = message->content[5];
+          data[7] = message->content[4];
+          data[8] = message->content[7];
+          data[9] = message->content[6];
+          data[10] = 0x00;
+          data[11] = 0x00;
+          return 12;
+        case CAN_CMD_SDO_WRITE_SEND_N_BYTE_INIT:
+          data[0] = CAN_SERIAL_DEVICE_OPCODE_WRITE_SEG_INIT;
+          data[1] = 0x03;
+          data[2] = message->content[2];
+          data[3] = message->content[1];
+          data[4] = message->id;
+          data[5] = message->content[3];
+          data[6] = message->content[5];
+          data[7] = message->content[4];
+          data[8] = message->content[7];
+          data[9] = message->content[6];
+          data[10] = 0x00;
+          data[11] = 0x00;
+          return 12;
+        case CAN_CMD_SDO_WRITE_SEND_N_BYTE_SEGMENT:
+          data[0] = CAN_SERIAL_DEVICE_OPCODE_WRITE_SEG;
+          data[1] = message->length;
+          data[2] = (message->length > 1) ? message->content[2] : 0x00;
+          data[3] = (message->length > 0) ? message->content[1] : 0x00;
+          data[7] = (message->length > 3) ? message->content[4] : 0x00;
+          data[5] = (message->length > 2) ? message->content[3] : 0x00;
+          data[6] = (message->length > 5) ? message->content[6] : 0x00;
+          data[7] = (message->length > 4) ? message->content[5] : 0x00;
+          data[8] = (message->length > 7) ? message->content[8] : 0x00;
+          data[9] = (message->length > 6) ? message->content[7] : 0x00;
+          data[10] = 0x00;
+          data[11] = 0x00;
+          return 10;
+        case CAN_CMD_SDO_READ_SEND:
+          data[0] = CAN_SERIAL_DEVICE_OPCODE_READ;
+          data[1] = 0x01;
+          data[2] = message->content[2];
+          data[3] = message->content[1];
+          data[4] = message->id;
+          data[5] = message->content[3];
+          data[6] = 0x00;
+          data[7] = 0x00;
+          return 8;
+      }
+      
+      error_setf(&dev->error, CAN_SERIAL_DEVICE_ERROR_CONVERT,
+        "Invalid SDO CCS: 0x%02x", message->content[0]);
+    }
+    else
+      error_setf(&dev->error, CAN_SERIAL_DEVICE_ERROR_CONVERT,
+        "Invalid SDO command: 0x%02x", message->content[0]);
   }
-
-  error_setf(&dev->error, CAN_SERIAL_ERROR_CONVERT,
-    "Invalid SDO command: 0x%02x", message->content[0]);
+  else {
+    data[0] = CAN_SERIAL_DEVICE_OPCODE_SEND_CAN_FRAME;
+    data[1] = 5;
+    data[2] = (message->id >> 8);
+    data[3] = message->id;
+    data[4] = (message->data_length >> 8);
+    data[5] = message->data_length;
+    memcpy(&data[6], message->data, sizeof(message->data));
+    return 6+sizeof(message->data);
+  }
+    
   return -dev->error.code;
 }
 
-int can_serial_device_to_epos(can_serial_device_t* dev, unsigned char* data,
+int can_serial_device_to_message(can_serial_device_t* dev, const
+    can_connection_set_t* connection_set, unsigned char* data,
     can_message_t* message) {
   error_clear(&dev->error);
   
@@ -250,11 +308,17 @@ int can_serial_device_to_epos(can_serial_device_t* dev, unsigned char* data,
       case CAN_CMD_SDO_WRITE_SEND_4_BYTE:
         message->content[0] = CAN_CMD_SDO_WRITE_RECEIVE;
         break;
+      case CAN_CMD_SDO_WRITE_SEND_N_BYTE_INIT:
+        message->content[0] = CAN_CMD_SDO_WRITE_RECEIVE;
+        break;
+      case CAN_CMD_SDO_WRITE_SEND_N_BYTE_SEGMENT:
+        message->content[0] = CAN_CMD_SDO_WRITE_RECEIVE;
+        break;
       case CAN_CMD_SDO_READ_SEND:
         message->content[0] = CAN_CMD_SDO_READ_RECEIVE_UNDEFINED;
         break;
       default:
-        error_setf(&dev->error, CAN_SERIAL_ERROR_CONVERT,
+        error_setf(&dev->error, CAN_SERIAL_DEVICE_ERROR_CONVERT,
           "Invalid SDO command: 0x%02x", message->content[0]);
         return dev->error.code;
     }
@@ -293,55 +357,59 @@ int can_serial_device_send(can_serial_device_t* dev, unsigned char* data,
 
   error_clear(&dev->error);
   
-  can_serial_calc_crc(data, num, crc_value);
+  can_serial_crc(data, num, crc_value);
   data[num-2] = crc_value[0];
   data[num-1] = crc_value[1];
 
-  can_serial_change_byte_order(data, num);
+  can_serial_reorder_bytes(data, num);
 
   if (serial_device_write(&dev->serial_dev, data, 1) < 0) {
-    error_blame(&dev->error, &dev->serial_dev.error, CAN_SERIAL_ERROR_SEND);
+    error_blame(&dev->error, &dev->serial_dev.error,
+      CAN_SERIAL_DEVICE_ERROR_SEND);
     return -dev->error.code;
   }
 
   result = serial_device_read(&dev->serial_dev, &buffer, 1);
   if (result > 0) {
-    if (buffer == CAN_SERIAL_ACK_FAILED) {
-      error_setf(&dev->error, CAN_SERIAL_ERROR_SEND,
+    if (buffer == CAN_SERIAL_DEVICE_ACK_FAILED) {
+      error_setf(&dev->error, CAN_SERIAL_DEVICE_ERROR_SEND,
         "Send acknowledge failed");
       return -dev->error.code;
     }
-    else if (buffer != CAN_SERIAL_ACK_OKAY) {
-      error_setf(&dev->error, CAN_SERIAL_ERROR_SEND,
+    else if (buffer != CAN_SERIAL_DEVICE_ACK_OKAY) {
+      error_setf(&dev->error, CAN_SERIAL_DEVICE_ERROR_SEND,
         "Unexpected response: 0x%02x", buffer);
       return -dev->error.code;
     }
   }
   else {
-    error_blame(&dev->error, &dev->serial_dev.error, CAN_SERIAL_ERROR_SEND);
+    error_blame(&dev->error, &dev->serial_dev.error,
+      CAN_SERIAL_DEVICE_ERROR_SEND);
     return -dev->error.code;
   }
 
   if (serial_device_write(&dev->serial_dev, &data[1], num-1) < 0) {
-    error_blame(&dev->error, &dev->serial_dev.error, CAN_SERIAL_ERROR_SEND);
+    error_blame(&dev->error, &dev->serial_dev.error,
+      CAN_SERIAL_DEVICE_ERROR_SEND);
     return -dev->error.code;
   }
 
   result = serial_device_read(&dev->serial_dev, &buffer, 1);
   if (result > 0) {
-    if (buffer == CAN_SERIAL_ACK_FAILED) {
-      error_setf(&dev->error, CAN_SERIAL_ERROR_SEND,
+    if (buffer == CAN_SERIAL_DEVICE_ACK_FAILED) {
+      error_setf(&dev->error, CAN_SERIAL_DEVICE_ERROR_SEND,
         "Send acknowledge failed");
       return -dev->error.code;
     }
-    else if (buffer != CAN_SERIAL_ACK_OKAY) {
-      error_setf(&dev->error, CAN_SERIAL_ERROR_SEND,
+    else if (buffer != CAN_SERIAL_DEVICE_ACK_OKAY) {
+      error_setf(&dev->error, CAN_SERIAL_DEVICE_ERROR_SEND,
         "Unexpected response: 0x%02x", buffer);
       return -dev->error.code;
     }
   }
   else {
-    error_blame(&dev->error, &dev->serial_dev.error, CAN_SERIAL_ERROR_SEND);
+    error_blame(&dev->error, &dev->serial_dev.error,
+      CAN_SERIAL_DEVICE_ERROR_SEND);
     return -dev->error.code;
   }
 
@@ -356,22 +424,24 @@ int can_serial_device_receive(can_serial_device_t* dev, unsigned char* data) {
   
   result = serial_device_read(&dev->serial_dev, &buffer, 1);
   if (result > 0) {
-    if (buffer != CAN_SERIAL_OPCODE_RESPONSE) {
-      error_setf(&dev->error, CAN_SERIAL_ERROR_RECEIVE,
+    if (buffer != CAN_SERIAL_DEVICE_OPCODE_RESPONSE) {
+      error_setf(&dev->error, CAN_SERIAL_DEVICE_ERROR_RECEIVE,
         "Unexpected response: 0x%02x", buffer);
       return -dev->error.code;
     }
     else
-      data[0] = CAN_SERIAL_OPCODE_RESPONSE;
+      data[0] = CAN_SERIAL_DEVICE_OPCODE_RESPONSE;
   }
   else {
-    error_blame(&dev->error, &dev->serial_dev.error, CAN_SERIAL_ERROR_RECEIVE);
+    error_blame(&dev->error, &dev->serial_dev.error,
+      CAN_SERIAL_DEVICE_ERROR_RECEIVE);
     return -dev->error.code;
   }
 
-  buffer = CAN_SERIAL_ACK_OKAY;
+  buffer = CAN_SERIAL_DEVICE_ACK_OKAY;
   if (serial_device_write(&dev->serial_dev, &buffer, 1) < 0) {
-    error_blame(&dev->error, &dev->serial_dev.error, CAN_SERIAL_ERROR_RECEIVE);
+    error_blame(&dev->error, &dev->serial_dev.error,
+      CAN_SERIAL_DEVICE_ERROR_RECEIVE);
     return -dev->error.code;
   }
 
@@ -379,7 +449,8 @@ int can_serial_device_receive(can_serial_device_t* dev, unsigned char* data) {
   if (result > 0)
     data[1] = buffer;
   else {
-    error_blame(&dev->error, &dev->serial_dev.error, CAN_SERIAL_ERROR_RECEIVE);
+    error_blame(&dev->error, &dev->serial_dev.error,
+      CAN_SERIAL_DEVICE_ERROR_RECEIVE);
     return -dev->error.code;
   }
 
@@ -389,108 +460,38 @@ int can_serial_device_receive(can_serial_device_t* dev, unsigned char* data) {
       data[i+2] = buffer;
     else {
       error_blame(&dev->error, &dev->serial_dev.error,
-        CAN_SERIAL_ERROR_RECEIVE);
+        CAN_SERIAL_DEVICE_ERROR_RECEIVE);
       return -dev->error.code;
     }
   }
   result = i+2;
 
-  can_serial_change_byte_order(data, result);
+  can_serial_reorder_bytes(data, result);
   
-  can_serial_calc_crc(data, result, crc_value);
+  can_serial_crc(data, result, crc_value);
   if ((crc_value[0] == 0x00) && (crc_value[1] == 0x00)) {
-    buffer = CAN_SERIAL_ACK_OKAY;
+    buffer = CAN_SERIAL_DEVICE_ACK_OKAY;
     if (serial_device_write(&dev->serial_dev, &buffer, 1) < 1) {
       error_blame(&dev->error, &dev->serial_dev.error,
-        CAN_SERIAL_ERROR_RECEIVE);
+        CAN_SERIAL_DEVICE_ERROR_RECEIVE);
       return -dev->error.code;
     }
   }
   else {
-    buffer = CAN_SERIAL_ACK_FAILED;
+    buffer = CAN_SERIAL_DEVICE_ACK_FAILED;
     if (serial_device_write(&dev->serial_dev, &buffer, 1) < 1) {
       error_blame(&dev->error, &dev->serial_dev.error,
-        CAN_SERIAL_ERROR_RECEIVE);
+        CAN_SERIAL_DEVICE_ERROR_RECEIVE);
       return -dev->error.code;
     }
     
-    error_set(&dev->error, CAN_SERIAL_ERROR_CRC);
+    error_set(&dev->error, CAN_SERIAL_DEVICE_ERROR_CRC);
     return -dev->error.code;
   }
 
-  can_serial_change_word_order(data, result);
+  can_serial_reorder_words(data, result);
 
   return result;
-}
-
-size_t can_serial_change_byte_order(unsigned char* data, size_t num) {
-  unsigned char tmp;
-  int i;
-
-  for (i = 2; i < num; i += 2) {
-    tmp = data[i];
-
-    data[i] = data[i+1];
-    data[i+1] = tmp;
-  }
-
-  return i;
-}
-
-size_t can_serial_change_word_order(unsigned char* data, size_t num) {
-  unsigned char tmp_lb, tmp_hb;
-  int i;
-
-  for (i = 2; i < (num-2); i += 4) {
-    tmp_hb = data[i];
-    tmp_lb = data[i+1];
-
-    data[i] = data[i+2];
-    data[i+1] = data[i+3];
-
-    data[i+2] = tmp_hb;
-    data[i+3] = tmp_lb;
-  }
-
-  return i;
-}
-
-size_t can_serial_calc_crc(unsigned char* data, size_t num, unsigned char*
-    crc_value) {
-  unsigned short* word_data = (unsigned short*)data;
-  size_t num_words = num/2;
-  unsigned short crc;
-
-  crc = can_serial_crc_alg(word_data, num_words);
-  crc_value[0] = (crc >> 8);
-  crc_value[1] = crc;
-
-  return num_words;
-}
-
-unsigned short can_serial_crc_alg(unsigned short* data, size_t num) {
-  unsigned short shift, c, carry, crc = 0;
-  int i;
-
-  for (i = 0; i < num; ++i) {
-    shift = 0x8000;
-    c = (data[i] << 8) | (data[i] >> 8);
-
-    do {
-      carry = crc & 0x8000;
-      crc <<= 1;
-
-      if (c & shift)
-        ++crc;
-      if (carry)
-        crc ^= 0x1021;
-
-      shift >>= 1;
-    }
-    while (shift);
-  }
-
-  return crc;
 }
 
 void can_serial_device_init(can_serial_device_t* dev, const char* name) {

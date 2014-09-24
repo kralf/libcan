@@ -1,3 +1,12 @@
+libcan (0.4-62) unstable; urgency=low
+
+  * Towards the first major release:
+    + Improved abstraction of CANopen layer
+    + Revised device-specific API
+    + Compilation currently fails
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Wed, 24 Sep 2014 13:10:00 +0100
+ 
 libcan (0.3-61) unstable; urgency=low
 
   * Some bug fixes which should prevent can_device_open() in CAN-USB library

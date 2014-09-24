@@ -18,42 +18,24 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#include "nmt.h"
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
+void can_nmt_init_cob(can_cob_t* cob, unsigned char cs, unsigned char
+    node_id) {
+  unsigned char data[2] = {cs, node_id};
+  can_cob_init(cob, can_protocol_nmt, 0, 0, data, sizeof(data));
+}
 
-/** \file can.h
-  * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
-  * \author Ralf Kaestner
-  * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
-  */
+unsigned char can_nmt_get_cob_cs(const can_cob_t* cob) {
+  if (cob->protocol == can_protocol_nmt)
+    return cob->data[0];
+  else
+    return 0;
+}
 
-#include "device.h"
-#include "message.h"
-
-#include "emcy.h"
-#include "sdo.h"
-
-/** \brief Predefined CAN configuration parser option group
-  */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
-
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
-
-#endif
+unsigned char can_nmt_get_cob_node_id(const can_cob_t* cob) {
+  if (cob->protocol == can_protocol_nmt)
+    return cob->data[1];
+  else
+    return 0;
+}

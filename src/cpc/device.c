@@ -39,9 +39,9 @@
 
 #include <timer/timer.h>
 
-#include "can_cpc.h"
+#include "device.h"
 
-const char* can_cpc_errors[] = {
+const char* can_cpc_device_errors[] = {
   "Success",
   "Failed to open CAN-CPC device",
   "Failed to close CAN-CPC device",
@@ -53,39 +53,39 @@ const char* can_cpc_errors[] = {
 
 const char* can_device_name = "CAN-CPC";
 
-config_param_t can_cpc_default_parameters[] = {
-  {CAN_CPC_PARAMETER_DEVICE,
+config_param_t can_cpc_device_default_parameters[] = {
+  {CAN_CPC_DEVICE_PARAMETER_NAME,
     config_param_type_string,
     "/dev/cpc_usb0",
     "",
     "Path to the special file of the connected CAN-CPC device"},
-  {CAN_CPC_PARAMETER_BIT_RATE,
+  {CAN_CPC_DEVICE_PARAMETER_BIT_RATE,
     config_param_type_int,
     "1000",
     "[10, 1000]",
     "The requested bit rate of the CAN bus in [kbit/s]"},
-  {CAN_CPC_PARAMETER_QUANTA_PER_BIT,
+  {CAN_CPC_DEVICE_PARAMETER_QUANTA_PER_BIT,
     config_param_type_int,
     "8",
     "[8, 16]",
     "The requested number of time quanta per bit of the CAN bus"},
-  {CAN_CPC_PARAMETER_SAMPLING_POINT,
+  {CAN_CPC_DEVICE_PARAMETER_SAMPLING_POINT,
     config_param_type_float,
     "0.75",
     "[0.75, 0.875]",
     "The requested synchronization sample point of the CAN bus, "
     "expressed as a ratio of the second phase buffer segment's "
     "start time quantum and the number of time quanta per bit"},
-  {CAN_CPC_PARAMETER_TIMEOUT,
+  {CAN_CPC_DEVICE_PARAMETER_TIMEOUT,
     config_param_type_float,
     "0.01",
     "",
     "The CAN bus communication timeout in [s]"},
 };
 
-const config_default_t can_default_config = {
-  can_cpc_default_parameters,
-  sizeof(can_cpc_default_parameters)/sizeof(config_param_t),
+const config_default_t can_device_default_config = {
+  can_cpc_device_default_parameters,
+  sizeof(can_cpc_device_default_parameters)/sizeof(config_param_t),
 };
 
 void can_cpc_device_init(can_cpc_device_t* dev);
@@ -103,14 +103,14 @@ int can_device_open(can_device_t* dev) {
     dev->num_received = 0;
     
     if (can_cpc_device_open(dev->comm_dev,
-        config_get_string(&dev->config, CAN_CPC_PARAMETER_DEVICE)) ||
+        config_get_string(&dev->config, CAN_CPC_DEVICE_PARAMETER_NAME)) ||
       can_cpc_device_setup(dev->comm_dev,
-        config_get_int(&dev->config, CAN_CPC_PARAMETER_BIT_RATE),
-        config_get_int(&dev->config, CAN_CPC_PARAMETER_QUANTA_PER_BIT),
-        config_get_float(&dev->config, CAN_CPC_PARAMETER_SAMPLING_POINT),
-        config_get_float(&dev->config, CAN_CPC_PARAMETER_TIMEOUT))) {
+        config_get_int(&dev->config, CAN_CPC_DEVICE_PARAMETER_BIT_RATE),
+        config_get_int(&dev->config, CAN_CPC_DEVICE_PARAMETER_QUANTA_PER_BIT),
+        config_get_float(&dev->config, CAN_CPC_DEVICE_PARAMETER_SAMPLING_POINT),
+        config_get_float(&dev->config, CAN_CPC_DEVICE_PARAMETER_TIMEOUT))) {
       error_blame(&dev->error, &((can_cpc_device_t*)dev->comm_dev)->error,
-        CAN_ERROR_OPEN);
+        CAN_DEVICE_ERROR_OPEN);
       
       can_cpc_device_destroy(dev->comm_dev);
     
@@ -140,11 +140,12 @@ int can_device_close(can_device_t* dev) {
       }
       else
         error_blame(&dev->error, &((can_cpc_device_t*)dev->comm_dev)->error,
-          CAN_ERROR_CLOSE);
+          CAN_DEVICE_ERROR_CLOSE);
     }
   }
   else
-    error_setf(&dev->error, CAN_ERROR_CLOSE, "Non-zero reference count");
+    error_setf(&dev->error, CAN_DEVICE_ERROR_CLOSE,
+      "Non-zero reference count");
 
   return dev->error.code;  
 }
@@ -153,14 +154,14 @@ int can_device_send_message(can_device_t* dev, const can_message_t* message) {
   error_clear(&dev->error);
   
   if (dev->comm_dev) {
-    if (can_cpc_device_send(dev->comm_dev, message))
+    if (can_cpc_device_send_message(dev->comm_dev, message))
       error_blame(&dev->error, &((can_cpc_device_t*)dev->comm_dev)->error,
-        CAN_ERROR_SEND);
+        CAN_DEVICE_ERROR_SEND);
     else
       ++dev->num_sent;
   }
   else
-    error_setf(&dev->error, CAN_ERROR_SEND,
+    error_setf(&dev->error, CAN_DEVICE_ERROR_SEND,
       "Communication device unavailable");
   
   return dev->error.code;
@@ -170,14 +171,14 @@ int can_device_receive_message(can_device_t* dev, can_message_t* message) {
   error_clear(&dev->error);
 
   if (dev->comm_dev) {
-    if (can_cpc_device_receive(dev->comm_dev, message))
+    if (can_cpc_device_receive_message(dev->comm_dev, message))
       error_blame(&dev->error, &((can_cpc_device_t*)dev->comm_dev)->error,
-        CAN_ERROR_RECEIVE);
+        CAN_DEVICE_ERROR_RECEIVE);
     else
       ++dev->num_received;
   }
   else
-    error_setf(&dev->error, CAN_ERROR_RECEIVE,
+    error_setf(&dev->error, CAN_DEVICE_ERROR_RECEIVE,
       "Communication device unavailable");
 
   return dev->error.code;  
@@ -195,7 +196,7 @@ void can_cpc_device_init(can_cpc_device_t* dev) {
 
   memset(&dev->msg_received, 0, sizeof(can_message_t));
   
-  error_init(&dev->error, can_cpc_errors);
+  error_init(&dev->error, can_cpc_device_errors);
 }
 
 void can_cpc_device_destroy(can_cpc_device_t* dev) {
@@ -216,7 +217,8 @@ int can_cpc_device_open(can_cpc_device_t* dev, const char* name) {
     CPC_AddHandlerEx(dev->handle, can_cpc_device_handle, dev);
   }
   else
-    error_setf(&dev->error, CAN_CPC_ERROR_OPEN, CPC_DecodeErrorMsg(result));
+    error_setf(&dev->error, CAN_CPC_DEVICE_ERROR_OPEN,
+      CPC_DecodeErrorMsg(result));
 
   return dev->error.code;
 }
@@ -232,7 +234,8 @@ int can_cpc_device_close(can_cpc_device_t* dev) {
     dev->fd = 0;
   }
   else
-    error_setf(&dev->error, CAN_CPC_ERROR_CLOSE, CPC_DecodeErrorMsg(result));
+    error_setf(&dev->error, CAN_CPC_DEVICE_ERROR_CLOSE,
+      CPC_DecodeErrorMsg(result));
 
   return dev->error.code;
 }
@@ -245,16 +248,16 @@ int can_cpc_device_setup(can_cpc_device_t* dev, int bitrate, int
   error_clear(&dev->error);
 
   double t = 1.0/(8*bitrate*1e3);
-  int brp = round(4*t*CAN_CPC_CLOCK_FREQUENCY/quanta_per_bit);
+  int brp = round(4*t*CAN_CPC_DEVICE_CLOCK_FREQUENCY/quanta_per_bit);
   int tseg1 = round(quanta_per_bit*sampling_point);
   int tseg2 = quanta_per_bit-tseg1;
   
   parameters = CPC_GetInitParamsPtr(dev->handle);
   parameters->canparams.cc_type = SJA1000;
   parameters->canparams.cc_params.sja1000.btr0 =
-    ((CAN_CPC_SYNC_JUMP_WIDTH-1) << 6)+(brp-1);
+    ((CAN_CPC_DEVICE_SYNC_JUMP_WIDTH-1) << 6)+(brp-1);
   parameters->canparams.cc_params.sja1000.btr1 =
-    (CAN_CPC_TRIPLE_SAMPLING << 7)+((tseg2-1) << 4)+(tseg1-2);
+    (CAN_CPC_DEVICE_TRIPLE_SAMPLING << 7)+((tseg2-1) << 4)+(tseg1-2);
   parameters->canparams.cc_params.sja1000.outp_contr = 0xda;
   
   parameters->canparams.cc_params.sja1000.acc_code1 = 0xff;
@@ -274,17 +277,19 @@ int can_cpc_device_setup(can_cpc_device_t* dev, int bitrate, int
     dev->sampling_point = sampling_point;
     dev->timeout = timeout;
 
-    if ((result = CPC_Control(dev->handle, CONTR_CAN_Message |
-        CONTR_CONT_ON)))
-    error_setf(&dev->error, CAN_CPC_ERROR_SETUP, CPC_DecodeErrorMsg(result));
+    if ((result = CPC_Control(dev->handle, CONTR_CAN_Message | CONTR_CONT_ON)))
+      error_setf(&dev->error, CAN_CPC_DEVICE_ERROR_SETUP,
+        CPC_DecodeErrorMsg(result));
   }
   else
-    error_setf(&dev->error, CAN_CPC_ERROR_SETUP, CPC_DecodeErrorMsg(result));
+    error_setf(&dev->error, CAN_CPC_DEVICE_ERROR_SETUP,
+      CPC_DecodeErrorMsg(result));
   
   return dev->error.code;
 }
 
-int can_cpc_device_send(can_cpc_device_t* dev, const can_message_t* message) {
+int can_cpc_device_send_message(can_cpc_device_t* dev, const can_message_t*
+    message) {
   CPC_CAN_MSG_T msg = {0x00L, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
   struct timeval time;
   fd_set set;
@@ -292,9 +297,9 @@ int can_cpc_device_send(can_cpc_device_t* dev, const can_message_t* message) {
 
   error_clear(&dev->error);
 
-  msg.id = message->id;
-  msg.length = message->length;
-  memcpy(msg.msg, message->content, message->length);
+  msg.id = message->id;  
+  msg.length = message->data_length;
+  memcpy(msg.msg, message->data, message->data_length);
 
   time.tv_sec = 0;
   time.tv_usec = dev->timeout*1e6;
@@ -304,20 +309,30 @@ int can_cpc_device_send(can_cpc_device_t* dev, const can_message_t* message) {
 
   result = select(dev->fd+1, NULL, &set, NULL, &time);
   if (result == 0) {
-    error_set(&dev->error, CAN_CPC_ERROR_TIMEOUT);
+    error_set(&dev->error, CAN_CPC_DEVICE_ERROR_TIMEOUT);
     return dev->error.code;
   }
 
-  while ((result = CPC_SendMsg(dev->handle, 0, &msg)) ==
-      CPC_ERR_CAN_NO_TRANSMIT_BUF)
-    timer_sleep(1e-5);
+  if (message->rtr) {
+    while ((result = CPC_SendRTR(dev->handle, 0, &msg)) ==
+        CPC_ERR_CAN_NO_TRANSMIT_BUF)
+      timer_sleep(1e-5);
+  }
+  else {
+    while ((result = CPC_SendMsg(dev->handle, 0, &msg)) ==
+        CPC_ERR_CAN_NO_TRANSMIT_BUF)
+      timer_sleep(1e-5);
+  }
+  
   if (result)
-    error_setf(&dev->error, CAN_CPC_ERROR_SEND, CPC_DecodeErrorMsg(result));
+    error_setf(&dev->error, CAN_CPC_DEVICE_ERROR_SEND,
+      CPC_DecodeErrorMsg(result));
 
   return dev->error.code;
 }
 
-int can_cpc_device_receive(can_cpc_device_t* dev, can_message_t* message) {
+int can_cpc_device_receive_message(can_cpc_device_t* dev, can_message_t*
+    message) {
   struct timeval time;
   fd_set set;
   int result;
@@ -332,7 +347,7 @@ int can_cpc_device_receive(can_cpc_device_t* dev, can_message_t* message) {
 
   result = select(dev->fd+1, &set, NULL, NULL, &time);
   if (result == 0) {
-    error_set(&dev->error, CAN_CPC_ERROR_TIMEOUT);
+    error_set(&dev->error, CAN_CPC_DEVICE_ERROR_TIMEOUT);
     return dev->error.code;
   }
 
@@ -347,8 +362,8 @@ void can_cpc_device_handle(int handle, const CPC_MSG_T* msg, void* custom) {
   can_cpc_device_t* dev = custom;
 
   dev->msg_received.id = msg->msg.canmsg.id;
+  dev->msg_received.rtr = (msg->type == CPC_MSG_T_RTR);
 
-  memcpy(dev->msg_received.content, msg->msg.canmsg.msg,
-    msg->msg.canmsg.length);
-  dev->msg_received.length = msg->msg.canmsg.length;
+  memcpy(dev->msg_received.data, msg->msg.canmsg.msg, msg->msg.canmsg.length);
+  dev->msg_received.data_length = msg->msg.canmsg.length;
 }

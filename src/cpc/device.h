@@ -18,63 +18,63 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_CPC_H
-#define CAN_CPC_H
+#ifndef CAN_CPC_DEVICE_H
+#define CAN_CPC_DEVICE_H
 
-/**
-  *  \file can_cpc.h
-  *  \brief CAN communication over CAN-CPC
-  *  \author Ralf Kaestner
-  * 
-  *  This layer provides low-level mechanisms for CANopen communication via
-  *  CAN-CPC hardware.
+/** \file cpc/device.h
+  * \ingroup can_cpc
+  * \brief CAN-CPC communication device
+  * \author Ralf Kaestner
+  *
+  * This file provides an interface to the CAN communication device back-end
+  * implemented for CAN-CPC hardware.
   */
 
 #include "can.h"
 
 /** \name Parameters
-  * \brief Predefined CAN-CPC parameters
+  * \brief Predefined CAN-CPC device parameters
   */
 //@{
-#define CAN_CPC_PARAMETER_DEVICE           "cpc-dev"
-#define CAN_CPC_PARAMETER_BIT_RATE         "cpc-bit-rate"
-#define CAN_CPC_PARAMETER_QUANTA_PER_BIT   "cpc-quanta-per-bit"
-#define CAN_CPC_PARAMETER_SAMPLING_POINT   "cpc-sampling-point"
-#define CAN_CPC_PARAMETER_TIMEOUT          "cpc-timeout"
+#define CAN_CPC_DEVICE_PARAMETER_NAME             "cpc-dev"
+#define CAN_CPC_DEVICE_PARAMETER_BIT_RATE         "cpc-bit-rate"
+#define CAN_CPC_DEVICE_PARAMETER_QUANTA_PER_BIT   "cpc-quanta-per-bit"
+#define CAN_CPC_DEVICE_PARAMETER_SAMPLING_POINT   "cpc-sampling-point"
+#define CAN_CPC_DEVICE_PARAMETER_TIMEOUT          "cpc-timeout"
 //@}
 
 /** \name Constants
-  * \brief Predefined CAN-CPC constants
+  * \brief Predefined CAN-CPC device constants
   */
 //@{
-#define CAN_CPC_CLOCK_FREQUENCY            16e6
-#define CAN_CPC_SYNC_JUMP_WIDTH            1
-#define CAN_CPC_TRIPLE_SAMPLING            0
+#define CAN_CPC_DEVICE_CLOCK_FREQUENCY            16e6
+#define CAN_CPC_DEVICE_SYNC_JUMP_WIDTH            1
+#define CAN_CPC_DEVICE_TRIPLE_SAMPLING            0
 //@}
 
 /** \name Error Codes
-  * \brief Predefined CAN-CPC error codes
+  * \brief Predefined CAN-CPC device error codes
   */
 //@{
-#define CAN_CPC_ERROR_NONE                 0
+#define CAN_CPC_DEVICE_ERROR_NONE                 0
 //!< Success
-#define CAN_CPC_ERROR_OPEN                 1
+#define CAN_CPC_DEVICE_ERROR_OPEN                 1
 //!< Failed to open CAN-CPC device
-#define CAN_CPC_ERROR_CLOSE                2
+#define CAN_CPC_DEVICE_ERROR_CLOSE                2
 //!< Failed to close CAN-CPC device
-#define CAN_CPC_ERROR_SETUP                3
+#define CAN_CPC_DEVICE_ERROR_SETUP                3
 //!< Failed to set CAN-CPC device parameters
-#define CAN_CPC_ERROR_TIMEOUT              4
+#define CAN_CPC_DEVICE_ERROR_TIMEOUT              4
 //!< CAN-CPC device timeout
-#define CAN_CPC_ERROR_SEND                 5
+#define CAN_CPC_DEVICE_ERROR_SEND                 5
 //!< Failed to send to CAN-CPC device
-#define CAN_CPC_ERROR_RECEIVE              6
+#define CAN_CPC_DEVICE_ERROR_RECEIVE              6
 //!< Failed to receive from CAN-CPC device
 //@}
 
-/** \brief Predefined CAN-CPC error descriptions
+/** \brief Predefined CAN-CPC device error descriptions
   */
-extern const char* can_cpc_errors[];
+extern const char* can_cpc_device_errors[];
 
 /** \brief CAN-CPC device structure
   */
@@ -124,21 +124,21 @@ int can_cpc_device_setup(
   double sampling_point,
   double timeout);
 
-/** \brief Send a CANopen SDO message over an open CAN-CPC device
+/** \brief Send CAN message over an open CAN-CPC device
   * \param[in] dev The open CAN-CPC device to send the message over.
-  * \param[in] message The CANopen SDO message to be sent over the device.
+  * \param[in] message The CAN message to be sent over the device.
   * \return The resulting error code.
   */
-int can_cpc_device_send(
+int can_cpc_device_send_message(
   can_cpc_device_t* dev,
   const can_message_t* message);
 
-/** \brief Receive a CANopen SDO message on an open CAN-CPC device
+/** \brief Receive CAN message on an open CAN-CPC device
   * \param[in] dev The open CAN-CPC device to receive the message on.
-  * \param[out] message The CANopen SDO message received on the device.
+  * \param[out] message The CAN message received on the device.
   * \return The resulting error code.
   */
-int can_cpc_device_receive(
+int can_cpc_device_receive_message(
   can_cpc_device_t* dev,
   can_message_t* message);
 

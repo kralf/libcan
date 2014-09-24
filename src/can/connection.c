@@ -18,42 +18,24 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#include "connection.h"
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
+void can_connection_init(can_connection_t* connection, can_service_t service,
+    can_direction_t direction, unsigned short cob_id, size_t num_cob_ids) {
+  connection->service = service;
+  connection->direction = direction;
+  
+  connection->cob_id = cob_id;
+  connection->num_cob_ids = num_cob_ids;
+}
 
-/** \file can.h
-  * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
-  * \author Ralf Kaestner
-  * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
-  */
-
-#include "device.h"
-#include "message.h"
-
-#include "emcy.h"
-#include "sdo.h"
-
-/** \brief Predefined CAN configuration parser option group
-  */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
-
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
-
-#endif
+void can_connection_print(FILE* stream, const can_connection_t* connection) {
+  fprintf(stream, "%s %s: %03x",
+    can_services[connection->service],
+    (connection->direction == can_direction_send) ? "SEND" : "RECV",
+    connection->cob_id);
+  
+  if (connection->num_cob_ids > 1)
+    fprintf(stream, " - %03x", (unsigned short)(connection->cob_id+
+      connection->num_cob_ids));
+}

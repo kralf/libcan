@@ -18,42 +18,55 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#include <string.h>
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
-
-/** \file can.h
-  * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
-  * \author Ralf Kaestner
-  * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
-  */
-
-#include "device.h"
-#include "message.h"
-
-#include "emcy.h"
 #include "sdo.h"
 
-/** \brief Predefined CAN configuration parser option group
-  */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
+void can_sdo_send_init_cob(can_cob_t* cob, unsigned char node_id,
+    can_sdo_ccs_t ccs, can_sdo_transfer_t transfer, unsigned short index,
+    unsigned char subindex, const unsigned char* data, size_t data_length) {
+  unsigned char cob_data[sizeof(cob->data)];
+  
+  if (data_length+4 > sizeof(cob->data))
+    data_length = sizeof(cob->data)-4;
+  
+  cob_data[0] = (ccs << 5);
+  if (transfer == can_sdo_transfer_expedited) {
+    cob_data[0] |= 0x03;
+    cob_data[0] |= ((sizeof(cob->data)-4-data_length) << 2);
+  }
+  cob_data[1] = (index >> 8);
+  cob_data[2] = index;
+  cob_data[3] = subindex;
+  memcpy(&cob_data[4], data, data_length);
+  
+  can_cob_init(cob, can_protocol_sdo, node_id, 0, cob_data, sizeof(cob_data));
+}
 
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+can_sdo_ccs_t can_sdo_get_cob_ccs(const can_cob_t* cob) {
+  if (cob->protocol == can_protocol_sdo)
+    return (cob->data[0] >> 5);
+  else
+    return -1;
+}
 
-#endif
+can_sdo_transfer_t can_sdo_get_cob_transfer(const can_cob_t* cob) {
+  if (cob->protocol == can_protocol_sdo)
+    return ((cob->data[0] >> 1) & 0x01);
+  else
+    return -1;
+}
+
+unsigned short can_sdo_get_cob_index(const can_cob_t* cob) {
+  if (cob->protocol == can_protocol_sdo)
+    return (cob->data[1] << 8)+cob->data[2];
+  else
+    return 0;
+}
+
+unsigned char can_sdo_get_cob_subindex(const can_cob_t* cob) {
+  if (cob->protocol == can_protocol_sdo)
+    return cob->data[3];
+  else
+    return 0;
+}

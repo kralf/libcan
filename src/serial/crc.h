@@ -18,42 +18,43 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#ifndef CAN_SERIAL_CRC_H
+#define CAN_SERIAL_CRC_H
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
+/** \file serial/crc.h
+  * \ingroup can_serial
+  * \brief CAN-Serial checksum calculation helpers
+  * \author Marc Rauer, Ralf Kaestner
+  *
+  * This file provides an interface for calculating the checksums required
+  * to transfer CANopen messages over RS232 serial connections to maxon EPOS
+  * controllers.
+  */
+
+#include <stdlib.h>
+
+/** \brief Calculate a 16-bit CRC checksum using CRC-CCITT algorithm
+  * \param[in] data An array of bytes representing the serial data frame.
+  * \param[in] num The number of bytes in the data frame.
+  * \param[out] crc_value An array of two bytes to store the CRC-word.
+  * \return The number of words built from the array.
   * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
+  * Calculation has to include all bytes in the data frame. Internally,
+  * the array is transformed to an array of words in order to calculate the
+  * CRC. The CRC word is then tranformed back to an array of characters.
   */
+size_t can_serial_crc(
+  unsigned char* data,
+  size_t num,
+  unsigned char* crc_value);
 
-/** \file can.h
-  * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
-  * \author Ralf Kaestner
-  * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
+/** \brief Implementation of the CRC-CCITT algorithm
+  * \param[in] data An array of words containing the serial data frame.
+  * \param[in] num The number of words in the data frame.
+  * \return The calculated CRC-value.
   */
-
-#include "device.h"
-#include "message.h"
-
-#include "emcy.h"
-#include "sdo.h"
-
-/** \brief Predefined CAN configuration parser option group
-  */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
-
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+unsigned short can_serial_crc_ccitt(
+  unsigned short* data,
+  size_t num);
 
 #endif

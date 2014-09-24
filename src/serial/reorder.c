@@ -18,42 +18,36 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#include "reorder.h"
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
+size_t can_serial_reorder_bytes(unsigned char* data, size_t num) {
+  unsigned char tmp;
+  int i;
 
-/** \file can.h
-  * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
-  * \author Ralf Kaestner
-  * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
-  */
+  for (i = 2; i < num; i += 2) {
+    tmp = data[i];
 
-#include "device.h"
-#include "message.h"
+    data[i] = data[i+1];
+    data[i+1] = tmp;
+  }
 
-#include "emcy.h"
-#include "sdo.h"
+  return i;
+}
 
-/** \brief Predefined CAN configuration parser option group
-  */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
+size_t can_serial_reorder_words(unsigned char* data, size_t num) {
+  unsigned char tmp_lb, tmp_hb;
+  int i;
 
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+  for (i = 2; i < (num-2); i += 4) {
+    tmp_hb = data[i];
+    tmp_lb = data[i+1];
 
-#endif
+    data[i] = data[i+2];
+    data[i+1] = data[i+3];
+
+    data[i+2] = tmp_hb;
+    data[i+3] = tmp_lb;
+  }
+
+  return i;
+}

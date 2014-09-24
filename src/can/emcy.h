@@ -18,42 +18,48 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#ifndef CAN_EMCY_H
+#define CAN_EMCY_H
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
-
-/** \file can.h
+/** \file emcy.h
   * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
+  * \brief CANopen Emergency Object (EMCY) protocol
   * \author Ralf Kaestner
   * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
+  * The EMCY protocol specifies the transmission of emergency telegrams
+  * upon error events.
   */
 
-#include "device.h"
-#include "message.h"
+#include "cob.h"
 
-#include "emcy.h"
-#include "sdo.h"
-
-/** \brief Predefined CAN configuration parser option group
+/** \brief Retrieve error code of an EMCY communication object
+  * \param[in] cob The EMCY communication object to retrieve the error
+  *   code for.
+  * \return The error code of the provided EMCY communication object or
+  *   zero if the provided communication object is not an EMCY communication
+  *   object.
   */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
+unsigned short can_emcy_get_cob_error_code(
+  const can_cob_t* cob);
 
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
+/** \brief Retrieve error register of an EMCY communication object
+  * \param[in] cob The EMCY communication object to retrieve the error
+  *   register for.
+  * \return The error register of the provided EMCY communication object or
+  *   zero if the provided communication object is not an EMCY communication
+  *   object.
   */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+unsigned char can_emcy_get_cob_error_register(
+  const can_cob_t* cob);
+
+/** \brief Retrieve vendor code of an EMCY communication object
+  * \param[in] cob The EMCY communication object to retrieve the vendor
+  *   code for.
+  * \return The vendor code of the provided EMCY communication object,
+  *   an array of 5 bytes or null if the provided communication object is
+  *   not an EMCY communication object.
+  */
+const unsigned char* can_emcy_get_cob_vendor_code(
+  const can_cob_t* object);
 
 #endif

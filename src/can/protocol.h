@@ -18,42 +18,42 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#ifndef CAN_PROTOCOL_H
+#define CAN_PROTOCOL_H
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
-
-/** \file can.h
+/** \file protocol.h
   * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
+  * \brief CANopen protocols
   * \author Ralf Kaestner
   * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
+  * This header specifies the available CANopen protocols.
   */
 
-#include "device.h"
-#include "message.h"
+#include <stdlib.h>
 
-#include "emcy.h"
-#include "sdo.h"
-
-/** \brief Predefined CAN configuration parser option group
+/** \brief CANopen protocols
   */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
+typedef enum {
+  can_protocol_sync,
+  //!< CANopen Synchronization Object (SYNC) protocol.
+  can_protocol_emcy,
+  //!< CANopen Emergency Object (EMCY) protocol.
+  can_protocol_time,
+  //!< CANopen Time Stamp Object (TIME) protocol.
+  can_protocol_nmt,
+  //!< CANopen Network Management (NMT) protocol.
+  can_protocol_nmt_ec,
+  //!< CANopen Network Management Error Control (NMT-EC) protocol.
+  can_protocol_lss,
+  //!< CANopen Layer Setting Services (LSS) protocol.
+  can_protocol_sdo,
+  //!< CANopen Service Data Object (SDO) protocol.
+  can_protocol_pdo,
+  //!< CANopen Process Data Object (PDO) protocol.
+} can_protocol_t;
 
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
+/** \brief Predefined CANopen protocols
   */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+extern const char* can_protocols[];
 
 #endif

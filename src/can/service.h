@@ -18,42 +18,59 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#ifndef CAN_SERVICE_H
+#define CAN_SERVICE_H
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
-
-/** \file can.h
+/** \file service.h
   * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
+  * \brief CANopen services
   * \author Ralf Kaestner
   * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
+  * This header specifies the available CANopen services.
   */
 
-#include "device.h"
-#include "message.h"
+#include <stdlib.h>
 
-#include "emcy.h"
-#include "sdo.h"
+#include "protocol.h"
 
-/** \brief Predefined CAN configuration parser option group
+/** \brief CANopen services
+  * 
+  * The CANopen services specified by this enumerable type are limited to
+  * the predefined connection set of the CANopen standard. Additional PDO
+  * services may be referred to by using their index as an offset to
+  * can_service_pdo1.
   */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
+typedef enum {
+  can_service_sync,
+  //!< CANopen Synchronization Object (SYNC) service.
+  can_service_emcy,
+  //!< CANopen Emergency Object (EMCY) service.
+  can_service_time,
+  //!< CANopen Time Stamp Object (TIME) service.
+  can_service_nmt,
+  //!< CANopen Network Management (NMT) service.
+  can_service_nmt_ec,
+  //!< CANopen Network Management Error Control (NMT-EC) service.
+  can_service_lss,
+  //!< CANopen Layer Setting Services (LSS).
+  can_service_sdo,
+  //!< CANopen Service Data Object (SDO) service.
+  can_service_pdo1,
+  //!< First CANopen Process Data Object (PDO) service.
+  can_service_pdo2,
+  //!< Second CANopen Process Data Object (PDO) service.
+  can_service_pdo3,
+  //!< Third CANopen Process Data Object (PDO) service.
+  can_service_pdo4,
+  //!< Fourth CANopen Process Data Object (PDO) service.
+} can_service_t;
 
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
+/** \brief Predefined CANopen services
   */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
+extern const char* can_services[];
+
+/** \brief Predefined CANopen service protocols
+  */
+extern const can_protocol_t can_service_protocols[];
 
 #endif

@@ -18,42 +18,36 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef CAN_H
-#define CAN_H
+#include <string.h>
 
-/** \defgroup can Generic CANopen Communication
-  * \brief Library functions for generic CANopen communication
-  * 
-  * The generic CANopen communication module provides library functions
-  * and interfaces for accessing hardware devices which comply with the
-  * CANopen communication standard.
-  */
+#include "cob.h"
 
-/** \file can.h
-  * \ingroup can
-  * \brief Generic CANopen-related definitions and module includes
-  * \author Ralf Kaestner
-  * 
-  * This header defines some generic CANopen-related constants and includes
-  * the essential module headers.
-  */
+void can_cob_init(can_cob_t* cob, unsigned char node_id, unsigned char rtr,
+    const unsigned char* data, size_t data_length) {
+  cob->node_id = node_id;
+  cob->rtr = rtr;
+  
+  if (data_length > sizeof(cob->data))
+    data_length = sizeof(cob->data);  
+  memcpy(cob->data, data, data_length);
+  if (data_length < sizeof(cob->data))
+    memset(&cob->data[data_length], 0, sizeof(cob->data)-data_length);
+  cob->data_length = data_length;
+}
 
-#include "device.h"
-#include "message.h"
-
-#include "emcy.h"
-#include "sdo.h"
-
-/** \brief Predefined CAN configuration parser option group
-  */
-#define CAN_CONFIG_PARSER_OPTION_GROUP            "can"
-
-/** \name Node Identifiers
-  * \brief Predefined node identifiers as defined by the CANopen standard
-  */
-//@{
-#define CAN_NODE_ID_MAX                           0x007F
-#define CAN_NODE_ID_BROADCAST                     0x0000
-//@}
-
-#endif
+void can_cob_print(FILE* stream, const can_cob_t* cob) {
+  fprintf(stream, "NODE-ID %03d RTR %1d: ",
+    cob->node_id,
+    cob->rtr);
+  
+  if (cob->data_length) {
+    size_t i;
+    for (i = 0; i < cob->data_length; ++i) {
+      if (!i)
+        fprintf(stream, "Data");
+      fprintf(stream, " %02x", cob->data[i]);
+    }
+  }
+  else
+    fprintf(stream, "No data");
+}
